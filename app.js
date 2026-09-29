@@ -59,7 +59,12 @@ const state = {
   firebase: null,
   activeFilter: "All",
   query: "",
-  mapQuery: ""
+  mapQuery: "",
+  aiPlan: null,
+  aiPreferences: null,
+  aiMessages: [{ role: "assistant", text: "Marhaba! Tell me what kind of Jordan experience you want, and I’ll help you shape it." }],
+  aiBusy: false,
+  aiOnline: false
 };
 
 const escapeHtml = (value = "") => String(value).replace(/[&<>'"]/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[char]);
@@ -74,7 +79,7 @@ const storeLocal = () => {
 
 async function initFirebase() {
   try {
-    const [{ firebaseConfig }, firebaseApp, firebaseAuth, firestore] = await Promise.all([
+    const [{ firebaseConfig, appCheckSiteKey }, firebaseApp, firebaseAuth, firestore] = await Promise.all([
       import("./firebase-config.js"),
       import("https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js"),
       import("https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js"),
@@ -82,9 +87,26 @@ async function initFirebase() {
     ]);
     if (!firebaseConfig.apiKey || firebaseConfig.apiKey.includes("YOUR_")) return;
     const firebase = firebaseApp.initializeApp(firebaseConfig);
+    if (appCheckSiteKey) {
+      const appCheck = await import("https://www.gstatic.com/firebasejs/12.2.1/firebase-app-check.js");
+      appCheck.initializeAppCheck(firebase, {
+        provider: new appCheck.ReCaptchaEnterpriseProvider(appCheckSiteKey),
+        isTokenAutoRefreshEnabled: true
+      });
+    }
     const auth = firebaseAuth.getAuth(firebase);
     const db = firestore.getFirestore(firebase);
     state.firebase = { auth, db, firebaseAuth, firestore };
+    try {
+      const firebaseAI = await import("https://www.gstatic.com/firebasejs/12.2.1/firebase-ai.js");
+      const ai = firebaseAI.getAI(firebase, { backend: new firebaseAI.GoogleAIBackend() });
+      state.firebase.aiModel = firebaseAI.getGenerativeModel(ai, {
+        model: "gemini-3.8-flash",
+        systemInstruction: "You are Beyond Jordan AI, a concise and thoughtful Jordan travel concierge. Use only the destination data supplied by the app. Never invent live prices, opening hours, permits, weather, safety conditions, or availability. Clearly tell travelers to verify time-sensitive details."
+      });
+    } catch (aiError) {
+      console.info("Firebase AI Logic is not enabled yet; the local smart concierge remains available.");
+    }
     firebaseAuth.onAuthStateChanged(auth, async user => {
       state.user = user ? { uid: user.uid, name: user.displayName || user.email.split("@")[0], email: user.email } : null;
       storeLocal();
@@ -117,12 +139,12 @@ async function syncCloudData() {
 
 function nav(active = "") {
   const links = [
-    ["explore", "Explore"], ["activities", "Activities"], ["hidden-gems", "Hidden Gems"], ["map", "Map"], ["trip-planner", "Trip Planner"]
+    ["explore", "Explore"], ["activities", "Activities"], ["hidden-gems", "Hidden Gems"], ["ai-guide", "✦ AI Guide"], ["map", "Map"], ["trip-planner", "Trip Planner"]
   ];
   return `<header class="site-header">
     <nav class="nav container" aria-label="Main navigation">
       <a class="brand" href="#/home" aria-label="Beyond Jordan home"><span class="brand-mark">B</span><span>BEYOND JORDAN</span></a>
-      <div class="nav-links" id="nav-links">${links.map(([href, label]) => `<a class="nav-link ${active === href ? "active" : ""}" href="#/${href}">${label}</a>`).join("")}</div>
+      <div class="nav-links" id="nav-links">${links.map(([href, label]) => `<a class="nav-link ${href === "ai-guide" ? "ai-nav" : ""} ${active === href ? "active" : ""}" href="#/${href}">${label}</a>`).join("")}</div>
       <div class="nav-actions">
         ${state.user ? `<a href="#/favorites" aria-label="Favorites">♡</a><a class="avatar" href="#/profile" aria-label="Profile">${escapeHtml(state.user.name?.[0]?.toUpperCase() || "T")}</a>` : `<a class="login" href="#/login">Log In</a><a class="btn primary signup" href="#/signup">Sign Up</a>`}
         <button class="menu-btn" data-action="menu" aria-label="Open menu" aria-expanded="false">☰</button>
@@ -137,7 +159,7 @@ function footer() {
       <div class="footer-brand"><a class="brand" href="#/home"><span class="brand-mark">B</span><span>Beyond Jordan</span></a><p>Jordan is more than a destination. Discover its famous wonders, quiet landscapes, and welcoming local stories.</p><form class="newsletter" data-form="newsletter"><input type="email" required placeholder="Your email address" aria-label="Email address"><button class="btn" type="submit">Join</button></form></div>
       <div class="footer-col"><h3>Destinations</h3><a href="#/destination/petra">Petra & The South</a><a href="#/destination/wadi-rum">Wadi Rum Desert</a><a href="#/destination/dead-sea">Dead Sea Coast</a><a href="#/destination/amman">Amman City</a></div>
       <div class="footer-col"><h3>Experiences</h3><a href="#/activity/wadi-rum-camping">Desert Glamping</a><a href="#/activity/aqaba-diving">Coral Diving</a><a href="#/activity/dana-hiking">Canyon Hiking</a><a href="#/activity/jerash-walk">Historical Walks</a></div>
-      <div class="footer-col"><h3>Plan</h3><a href="#/trip-planner">Trip Planner</a><a href="#/favorites">Favorites</a><a href="#/map">Map & Nearby</a><a href="#/profile">Saved Trips</a></div>
+      <div class="footer-col"><h3>Plan</h3><a href="#/ai-guide">✦ AI Concierge</a><a href="#/trip-planner">Trip Planner</a><a href="#/favorites">Favorites</a><a href="#/map">Map & Nearby</a></div>
     </div>
     <div class="footer-bottom"><span>© 2026 Beyond Jordan. All rights reserved. Made in Amman.<br><small>Photography: Unsplash, Wikimedia Commons, Royal Jordanian and credited travel partners.</small></span><span>Instagram&nbsp;&nbsp; YouTube&nbsp;&nbsp; Pinterest</span></div>
   </div></footer>`;
@@ -165,7 +187,8 @@ function pageHero(eyebrow, title, copy, image) {
 
 function homePage() {
   return `${nav("home")}<main id="main">
-    <section class="hero"><div class="container"><div class="hero-content"><span class="eyebrow" style="color:#f1cc8d">The Hashemite Kingdom of Jordan</span><h1>Every path in Jordan tells a story.</h1><p>Walk through ancient cities, cross open deserts, follow green valleys, and meet the local spirit that makes every journey unforgettable.</p><div class="hero-actions"><a class="btn light" href="#/explore">Explore Jordan</a><a class="btn outline" style="color:#fff;border-color:#fff" href="#/trip-planner">Plan Your Trip</a></div><div class="hero-note"><span>✦ ${destinations.length} curated destinations</span><span>⌖ Local knowledge</span><span>♡ Save and plan freely</span></div></div></div></section>
+    <section class="hero"><div class="container"><div class="hero-content"><span class="eyebrow" style="color:#f1cc8d">The Hashemite Kingdom of Jordan</span><h1>Every path in Jordan tells a story.</h1><p>Walk through ancient cities, cross open deserts, follow green valleys, and meet the local spirit that makes every journey unforgettable.</p><div class="hero-actions"><a class="btn light" href="#/explore">Explore Jordan</a><a class="btn outline" style="color:#fff;border-color:#fff" href="#/ai-guide">✦ Plan with AI</a></div><div class="hero-note"><span>✦ ${destinations.length} curated destinations</span><span>⌖ Local knowledge</span><span>♡ Save and plan freely</span></div></div></div></section>
+    <section class="ai-home-strip"><div class="container"><div><span class="ai-orb">✦</span><span><strong>Meet your Jordan AI Concierge</strong><small>One smart plan, shaped around your time, pace, interests, and hidden-gem style.</small></span></div><a class="btn light" href="#/ai-guide">Build my journey →</a></div></section>
     <section class="section"><div class="container"><div class="section-head"><div><span class="eyebrow">Iconic Wonders</span><h2>Featured Destinations</h2></div><a class="text-link" href="#/explore">Explore All Locations</a></div><div class="grid cards-3">${destinations.filter(x => x.iconic).slice(0,6).map(x => destinationCard(x)).join("")}</div></div></section>
     <section class="section alt"><div class="container"><div class="section-head"><div><span class="eyebrow">Off the Beaten Path</span><h2>The Jordan You Don’t Know</h2><p>Go beyond standard brochures and uncover biosphere reserves, historic desert outposts, and villages rich with local life.</p></div><a class="text-link" href="#/hidden-gems">Find Hidden Gems</a></div><div class="grid cards-3">${destinations.filter(x => x.hidden).slice(0,3).map(x => destinationCard(x, true)).join("")}</div></div></section>
     <section class="section"><div class="container"><div class="section-head"><div><span class="eyebrow">Curated Experiences</span><h2>What Awaits You</h2></div></div><div class="grid cards-4">${activities.slice(1,5).map(x => `<a class="activity-tile" href="#/activity/${x.id}"><span class="activity-icon">${x.icon}</span><h3>${x.name}</h3><p>${x.description}</p></a>`).join("")}</div></div></section>
@@ -344,6 +367,139 @@ function mapPage() {
   return `${nav("map")}<main id="main"><div class="map-layout"><aside class="map-panel"><span class="eyebrow">Explore from north to south</span><h1>Jordan on the Map</h1><p class="map-intro">Find ${destinations.length} remarkable places across the Kingdom, from green northern hills to Aqaba's Red Sea coast.</p><form class="search-box" data-form="map-search"><input name="q" value="${escapeHtml(state.mapQuery)}" placeholder="Search places or regions" aria-label="Search the Jordan map"><span>⌕</span></form><div class="map-results"><strong>${mapItems.length}</strong> ${mapItems.length === 1 ? "place" : "places"} shown</div>${mapItems.length ? mapItems.map(item => `<a class="map-card" href="#/destination/${item.id}"><span class="map-card-number">${item.mapNumber}</span><img src="${item.image}" alt="${item.name}"><div><h3>${item.name}</h3><p>${item.region} · ${item.category}</p></div></a>`).join("") : `<div class="map-empty"><strong>No places found</strong><p>Try another city, region, or interest.</p></div>`}</aside><section class="map-canvas" aria-label="Interactive map showing places across Jordan"><div id="interactive-map" class="interactive-map"></div><div id="map-status" class="map-status"><span class="spinner" aria-hidden="true"></span><strong>Loading the map…</strong></div></section></div></main>`;
 }
 
+const AI_INTERESTS = ["History", "Nature", "Adventure", "Culture", "Water", "Wellness"];
+
+function destinationCatalog() {
+  return destinations.map(item => `${item.id}: ${item.name} | ${item.region} | ${item.category} | ${item.duration}${item.hidden ? " | hidden gem" : ""} | ${item.description}`).join("\n");
+}
+
+function buildSmartPlan(preferences) {
+  const interests = preferences.interests.length ? preferences.interests : ["Culture", "History"];
+  const paceBonus = preferences.pace === "adventurous" ? "Adventure" : preferences.pace === "relaxed" ? "Wellness" : "Culture";
+  const wanted = new Set([...interests, paceBonus]);
+  const count = Math.min(9, Math.max(4, preferences.days + 1));
+  const ranked = [...destinations].sort((a, b) => {
+    const score = item => Number(item.rating) + (wanted.has(item.category) ? 5 : 0) + (item.hidden ? 1.2 : 0) + (item.iconic ? .7 : 0);
+    return score(b) - score(a);
+  });
+  const selected = ranked.slice(0, count);
+  if (!selected.some(item => item.hidden)) selected[selected.length - 1] = destinations.find(item => item.hidden && wanted.has(item.category)) || destinations.find(item => item.hidden);
+  if (!selected.some(item => item.id === "petra")) selected[Math.max(1, selected.length - 2)] = findDestination("petra");
+  const unique = [...new Map(selected.map(item => [item.id, item])).values()];
+  const ordered = [...unique].sort((a, b) => b.lat - a.lat);
+  if (preferences.start === "aqaba") ordered.reverse();
+  const hiddenGem = ordered.find(item => item.hidden) || destinations.find(item => item.hidden);
+  return {
+    title: `${preferences.days}-Day Jordan Story`,
+    summary: `A ${preferences.pace} route balancing ${interests.join(" and ").toLowerCase()} with one memorable discovery beyond the classic guidebook.`,
+    stopIds: ordered.map(item => item.id),
+    travelDna: [preferences.pace, preferences.budget, ...interests.slice(0, 2)],
+    hiddenGemId: hiddenGem.id,
+    tips: [
+      "Keep the first and last day lighter for arrival and departure.",
+      "Confirm current opening times, trail access, weather, and transport before each stop.",
+      `The route begins toward ${preferences.start === "aqaba" ? "southern Jordan" : "northern Jordan"} to reduce unnecessary backtracking.`
+    ],
+    source: "smart"
+  };
+}
+
+async function runGemini(prompt) {
+  const model = state.firebase?.aiModel;
+  if (!model) throw new Error("Firebase AI Logic is not available");
+  const result = await model.generateContent(prompt);
+  const text = result.response.text();
+  state.aiOnline = true;
+  return text;
+}
+
+function parseAiPlan(text, preferences) {
+  const start = text.indexOf("{");
+  const end = text.lastIndexOf("}");
+  if (start < 0 || end < start) throw new Error("AI response was not structured");
+  const parsed = JSON.parse(text.slice(start, end + 1));
+  const stopIds = (parsed.stopIds || []).filter(id => destinations.some(item => item.id === id)).slice(0, 9);
+  if (stopIds.length < 3) throw new Error("AI route did not include enough valid places");
+  return {
+    title: String(parsed.title || `${preferences.days}-Day Jordan Journey`),
+    summary: String(parsed.summary || "A personal route across Jordan."),
+    stopIds,
+    travelDna: Array.isArray(parsed.travelDna) ? parsed.travelDna.slice(0, 4).map(String) : preferences.interests,
+    hiddenGemId: destinations.some(item => item.id === parsed.hiddenGemId) ? parsed.hiddenGemId : stopIds.find(id => findDestination(id).hidden),
+    tips: Array.isArray(parsed.tips) ? parsed.tips.slice(0, 3).map(String) : [],
+    source: "gemini"
+  };
+}
+
+async function createAiPlan(form) {
+  const data = new FormData(form);
+  const preferences = {
+    days: Number(data.get("days") || 7),
+    pace: String(data.get("pace") || "balanced"),
+    budget: String(data.get("budget") || "comfort"),
+    start: String(data.get("start") || "amman"),
+    interests: data.getAll("interests").map(String)
+  };
+  state.aiPreferences = preferences;
+  state.aiBusy = true;
+  render();
+  try {
+    const prompt = `Create a personalized Jordan itinerary using only IDs from this catalog.\nPreferences: ${JSON.stringify(preferences)}\nCatalog:\n${destinationCatalog()}\nReturn JSON only with this shape: {"title":"...","summary":"...","stopIds":["id"],"travelDna":["tag"],"hiddenGemId":"id","tips":["tip"]}. Choose 4-9 geographically sensible stops, include at least one hidden gem, and avoid claiming live information.`;
+    state.aiPlan = parseAiPlan(await runGemini(prompt), preferences);
+  } catch (error) {
+    state.aiOnline = false;
+    state.aiPlan = buildSmartPlan(preferences);
+  }
+  state.aiBusy = false;
+  render();
+  document.querySelector("#ai-result")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function localConciergeAnswer(question) {
+  const q = question.toLowerCase();
+  if (/hidden|quiet|unknown|local|gem/.test(q)) return "For a quieter Jordan story, pair Dana’s village trails with Shobak Castle, Iraq Al-Amir, or Umm al-Jimal. Tell me your number of days and favorite activity, and I’ll narrow it down.";
+  if (/petra.*wadi|wadi.*petra|compare/.test(q)) return "Petra is the stronger history-and-architecture experience; Wadi Rum is about desert scale, Bedouin culture, and outdoor adventure. With two days, keep one full day for each rather than rushing both.";
+  if (/family|children|kids/.test(q)) return "A family-friendly mix could include Amman, Jerash, Madaba, the Dead Sea, and Aqaba. Check age, swimming, trail, and weather requirements directly with each venue or operator before visiting.";
+  if (/budget|cheap|cost|price/.test(q)) return "For a lighter budget, group nearby places: Amman + Iraq Al-Amir + As-Salt, or Madaba + Mount Nebo + the Dead Sea. I won’t invent current prices, so verify transport and entry costs before booking.";
+  if (/water|swim|sea|div/.test(q)) return "Choose Aqaba for reefs and Red Sea activities, the Dead Sea for floating and wellness, and Wadi Mujib for seasonal canyon adventure. Access can change, so confirm conditions before travel.";
+  if (/food|eat|restaurant/.test(q)) return "Start with an Amman food walk for falafel, hummus, mansaf, coffee, and knafeh, then look for community-led meals around As-Salt or villages near Dana. Ask me to add food stops to a route.";
+  const matches = destinations.filter(item => q.includes(item.name.toLowerCase()) || q.includes(item.region.toLowerCase())).slice(0, 3);
+  if (matches.length) return matches.map(item => `${item.name}: ${item.description}`).join("\n\n") + "\n\nVerify current access and opening details before visiting.";
+  return "I can compare destinations, match you with a hidden gem, or shape a route by days, interests, pace, and budget. Try: “I have 5 days and love nature and history.”";
+}
+
+async function askAiConcierge(message) {
+  state.aiMessages.push({ role: "user", text: message });
+  state.aiBusy = true;
+  render();
+  try {
+    const prompt = `Traveler question: ${message}\nAnswer in the traveler’s language, in under 140 words. Use only this Beyond Jordan catalog:\n${destinationCatalog()}\nGive practical route-aware advice and say when time-sensitive details need verification.`;
+    const answer = await runGemini(prompt);
+    state.aiMessages.push({ role: "assistant", text: answer, source: "gemini" });
+  } catch (error) {
+    state.aiOnline = false;
+    state.aiMessages.push({ role: "assistant", text: localConciergeAnswer(message), source: "smart" });
+  }
+  state.aiBusy = false;
+  render();
+  requestAnimationFrame(() => {
+    const log = document.querySelector("#ai-chat-log");
+    if (log) log.scrollTop = log.scrollHeight;
+  });
+}
+
+function aiPlanResult() {
+  const plan = state.aiPlan;
+  if (!plan) return "";
+  const hiddenGem = findDestination(plan.hiddenGemId || plan.stopIds.find(id => findDestination(id).hidden));
+  return `<section class="ai-result" id="ai-result"><div class="ai-result-head"><div><span class="eyebrow">${plan.source === "gemini" ? "Generated with Gemini" : "Smart route ready"}</span><h2>${escapeHtml(plan.title)}</h2><p>${escapeHtml(plan.summary)}</p></div><button class="btn primary" data-action="use-ai-plan">Use this plan →</button></div><div class="travel-dna"><strong>Your Travel DNA</strong>${plan.travelDna.map(tag => `<span>${escapeHtml(tag)}</span>`).join("")}</div><div class="ai-route">${plan.stopIds.map((id, index) => { const item = findDestination(id); return `<a href="#/destination/${item.id}" class="ai-route-stop"><span>${index + 1}</span><img src="${item.image}" alt="${item.name}"><div><strong>${item.name}</strong><small>${item.region} · ${item.category}</small></div></a>`; }).join("")}</div><div class="ai-insights"><article><span class="eyebrow">Your hidden-gem match</span><h3>${hiddenGem.name}</h3><p>${hiddenGem.subtitle}</p><a class="text-link" href="#/destination/${hiddenGem.id}">Why it fits you →</a></article><article><span class="eyebrow">Smart route notes</span><ul>${plan.tips.map(tip => `<li>${escapeHtml(tip)}</li>`).join("")}</ul></article></div></section>`;
+}
+
+function aiGuidePage() {
+  const messages = state.aiMessages.map(message => `<div class="ai-message ${message.role}"><span>${message.role === "assistant" ? "✦" : "You"}</span><p>${escapeHtml(message.text).replace(/\n/g, "<br>")}</p></div>`).join("");
+  return `${nav("ai-guide")}<main id="main" class="ai-page"><section class="ai-hero"><div class="container"><div><span class="ai-kicker">BEYOND JORDAN INTELLIGENCE</span><h1>Your trip, shaped around <em>you.</em></h1><p>Build a thoughtful Jordan route in seconds, discover the hidden place that matches your travel style, or ask a real travel question.</p><div class="ai-trust"><span>✦ Route-aware</span><span>⌖ Jordan-focused</span><span>◌ Easy to adjust</span></div></div><div class="ai-hero-orbit"><span>AI</span><small>Jordan<br>Concierge</small></div></div></section><section class="section ai-workspace-section"><div class="container ai-workspace"><form class="ai-planner-card" data-form="ai-plan"><div class="ai-card-title"><span class="ai-orb">✦</span><div><span class="eyebrow">AI Trip Maker</span><h2>Tell us your travel style</h2></div></div><div class="form-grid"><div class="field"><label for="ai-days">How many days?</label><select id="ai-days" name="days">${[3,5,7,10,14].map(day => `<option value="${day}" ${day === 7 ? "selected" : ""}>${day} days</option>`).join("")}</select></div><div class="field"><label for="ai-start">Start near</label><select id="ai-start" name="start"><option value="amman">Amman / North</option><option value="aqaba">Aqaba / South</option></select></div><div class="field"><label for="ai-pace">Travel pace</label><select id="ai-pace" name="pace"><option value="relaxed">Relaxed</option><option value="balanced" selected>Balanced</option><option value="adventurous">Adventurous</option></select></div><div class="field"><label for="ai-budget">Travel style</label><select id="ai-budget" name="budget"><option value="budget">Budget-aware</option><option value="comfort" selected>Comfort</option><option value="premium">Premium</option></select></div></div><fieldset class="ai-interests"><legend>What pulls you to Jordan?</legend>${AI_INTERESTS.map((interest, index) => `<label><input type="checkbox" name="interests" value="${interest}" ${index < 2 ? "checked" : ""}><span>${interest}</span></label>`).join("")}</fieldset><button class="btn ai-generate" type="submit" ${state.aiBusy ? "disabled" : ""}>${state.aiBusy ? "<span class='mini-spinner'></span> Shaping your journey…" : "✦ Build my AI journey"}</button><p class="ai-fine-print">No invented prices or live access claims. Always verify time-sensitive details.</p></form><section class="ai-chat-card"><div class="ai-chat-head"><div><span class="status-dot"></span><div><strong>Jordan AI Concierge</strong><small>${state.aiOnline ? "Gemini connected" : "Smart travel mode"}</small></div></div><span class="ai-badge">BETA</span></div><div class="ai-quick-prompts">${["Find my hidden gem", "Petra or Wadi Rum?", "Plan a family route"].map(prompt => `<button type="button" data-ai-prompt="${prompt}">${prompt}</button>`).join("")}</div><div class="ai-chat-log" id="ai-chat-log">${messages}${state.aiBusy ? `<div class="ai-message assistant"><span>✦</span><p><i class="typing-dot"></i><i class="typing-dot"></i><i class="typing-dot"></i></p></div>` : ""}</div><form class="ai-chat-input" data-form="ai-chat"><input name="message" maxlength="400" required placeholder="Ask about routes, places, or experiences…" aria-label="Ask the Jordan AI concierge"><button type="submit" aria-label="Send" ${state.aiBusy ? "disabled" : ""}>↑</button></form></section></div>${aiPlanResult()}</section></main>${footer()}`;
+}
+
 function plannerSidebar(active = 1) {
   return `<aside class="planner-sidebar"><h3>Your Trip</h3><p>Build a journey that balances icons and discoveries.</p>${["Trip Basics", "Interests", "Places", "Review"].map((label, i) => `<div class="step ${i + 1 <= active ? "active" : ""}"><span>${i + 1}</span>${label}</div>`).join("")}</aside>`;
 }
@@ -395,6 +551,7 @@ function render() {
     "hidden-gems": hiddenGemsPage,
     activities: activitiesPage,
     map: mapPage,
+    "ai-guide": aiGuidePage,
     "trip-planner": tripPlannerPage,
     itinerary: itineraryPage,
     favorites: favoritesPage,
@@ -520,6 +677,11 @@ async function logout() {
 }
 
 app.addEventListener("click", async event => {
+  const aiPrompt = event.target.closest("[data-ai-prompt]");
+  if (aiPrompt) {
+    await askAiConcierge(aiPrompt.dataset.aiPrompt);
+    return;
+  }
   const favorite = event.target.closest("[data-favorite]");
   if (favorite) {
     event.preventDefault();
@@ -564,6 +726,19 @@ app.addEventListener("click", async event => {
     await syncCloudData();
     location.hash = "#/itinerary";
   }
+  if (action === "use-ai-plan" && state.aiPlan) {
+    const preferences = state.aiPreferences || { days: 7, interests: ["History", "Culture"] };
+    state.trip = {
+      ...state.trip,
+      name: state.aiPlan.title,
+      days: preferences.days,
+      interests: preferences.interests.length ? preferences.interests : ["History", "Culture"],
+      stops: [...state.aiPlan.stopIds]
+    };
+    await syncCloudData();
+    location.hash = "#/itinerary";
+    toast("Your AI route is now in the Trip Planner.");
+  }
   if (action === "save-trip") {
     if (!requireAuth("save-trip")) return;
     await syncCloudData();
@@ -600,6 +775,15 @@ app.addEventListener("submit", event => {
     event.preventDefault();
     state.mapQuery = new FormData(form).get("q")?.trim() || "";
     render();
+  }
+  if (form.matches("[data-form='ai-plan']")) {
+    event.preventDefault();
+    createAiPlan(form);
+  }
+  if (form.matches("[data-form='ai-chat']")) {
+    event.preventDefault();
+    const message = String(new FormData(form).get("message") || "").trim();
+    if (message) askAiConcierge(message);
   }
   if (form.matches("[data-form='newsletter']")) {
     event.preventDefault();

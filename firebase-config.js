@@ -6,3 +6,6 @@ export const firebaseConfig = {
   messagingSenderId: "308128110557",
   appId: "1:308128110557:web:ed31c645173e93b0c64834"
 };
+
+// أضف مفتاح reCAPTCHA Enterprise هنا بعد إنهاء إعداد Firebase App Check.
+export const appCheckSiteKey = "";

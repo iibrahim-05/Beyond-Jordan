@@ -6,3 +6,5 @@ export const firebaseConfig = {
   messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
   appId: "YOUR_APP_ID"
 };
+
+export const appCheckSiteKey = "YOUR_RECAPTCHA_ENTERPRISE_SITE_KEY";
