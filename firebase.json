@@ -7,6 +7,8 @@
       "firebase-config.example.js",
       "README.md",
       "LICENSE",
+      "*.log",
+      ".firebase/**",
       ".git/**",
       ".gitignore"
     ],
