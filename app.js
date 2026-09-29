@@ -201,6 +201,8 @@ function activityDetailPage(id) {
 }
 
 let mapLibrePromise;
+let activeMap;
+let activeMapObserver;
 
 // تحميل مكتبة MapLibre عند فتح صفحة الخريطة فقط، بدون React أو Node.js.
 function loadMapLibre() {
@@ -208,6 +210,13 @@ function loadMapLibre() {
     mapLibrePromise = import("https://unpkg.com/maplibre-gl@^6.11.2/dist/maplibre-gl.mjs");
   }
   return mapLibrePromise;
+}
+
+function destroyInteractiveMap() {
+  activeMapObserver?.disconnect();
+  activeMapObserver = undefined;
+  activeMap?.remove();
+  activeMap = undefined;
 }
 
 function filteredMapItems() {
@@ -225,18 +234,23 @@ async function initInteractiveMap(items) {
     if (!document.body.contains(mapElement)) return;
 
     // [غرب، جنوب] ثم [شرق، شمال]: تمنع سحب الخريطة بعيدًا عن الأردن.
-    const jordanBounds = [[34.7, 28.8], [39.4, 33.4]];
+    // هامش قريب حول المملكة يسمح بإظهار شكل الأردن الطويل كاملًا داخل الشاشات العريضة.
+    const jordanBounds = [[33.8, 28.6], [40.2, 33.7]];
     const map = new maplibregl.Map({
       container: mapElement,
       style: CARTO_BASEMAP_STYLE,
       center: [36.5, 31.2],
       zoom: 6,
-      minZoom: 5.8,
+      minZoom: 5.2,
       maxZoom: 15,
       maxBounds: jordanBounds,
+      renderWorldCopies: false,
       attributionControl: true
     });
+    activeMap = map;
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
+
+    const visiblePlaces = new maplibregl.LngLatBounds();
 
     items.forEach(item => {
       const markerContent = document.createElement("div");
@@ -246,10 +260,27 @@ async function initInteractiveMap(items) {
       markerContent.setAttribute("aria-label", item.name);
 
       const popup = new maplibregl.Popup({ offset: 22, maxWidth: "290px" }).setHTML(`<article class="map-info-window"><img src="${item.image}" alt=""><div><span>${item.category} · ${item.region}</span><h3>${item.name}</h3><p>${item.subtitle}</p><a href="#/destination/${item.id}">View destination →</a></div></article>`);
-      new maplibregl.Marker({ element: markerContent, anchor: "bottom" }).setLngLat([item.lng, item.lat]).setPopup(popup).addTo(map);
+      new maplibregl.Marker({ element: markerContent, anchor: "center" }).setLngLat([item.lng, item.lat]).setPopup(popup).addTo(map);
+      visiblePlaces.extend([item.lng, item.lat]);
     });
 
-    map.once("load", () => statusElement?.remove());
+    const fitVisiblePlaces = () => {
+      map.resize();
+      if (visiblePlaces.isEmpty()) return;
+      const compact = mapElement.clientWidth < 700;
+      map.fitBounds(visiblePlaces, {
+        padding: compact ? { top: 54, right: 42, bottom: 54, left: 42 } : { top: 70, right: 70, bottom: 70, left: 70 },
+        maxZoom: 7,
+        duration: 0
+      });
+    };
+
+    map.once("load", () => {
+      fitVisiblePlaces();
+      statusElement?.remove();
+    });
+    activeMapObserver = new ResizeObserver(() => map.resize());
+    activeMapObserver.observe(mapElement);
     map.on("error", event => console.info("Map tile notice:", event.error?.message || "A map tile could not be loaded."));
   } catch (error) {
     if (statusElement) {
@@ -306,6 +337,7 @@ function notFoundPage() {
 }
 
 function render() {
+  destroyInteractiveMap();
   const current = route();
   const [page, id] = current.split("/");
   const pages = {
