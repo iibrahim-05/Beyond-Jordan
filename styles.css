@@ -150,7 +150,6 @@ p { color: var(--muted); line-height: 1.7; }
 .map-status.error .spinner { display: none; }
 .map-status p { max-width: 410px; margin: 0; }
 .map-status code { padding: 2px 6px; border-radius: 4px; background: var(--sand-100); }
-.interactive-map-marker { width: 30px; height: 30px; display: grid; place-items: center; border: 3px solid #fff; border-radius: 50%; color: #fff; background: var(--terracotta); box-shadow: 0 5px 12px rgba(39,25,16,.32); font: 700 .72rem "DM Sans", sans-serif; cursor: pointer; }
 .map-info-window { width: 260px; overflow: hidden; color: var(--ink); background: #fff; }
 .map-info-window img { width: 100%; height: 118px; object-fit: cover; border-radius: 7px; }
 .map-info-window div { padding: 13px 4px 5px; }

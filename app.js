@@ -251,18 +251,25 @@ async function initInteractiveMap(items) {
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
 
     const visiblePlaces = new maplibregl.LngLatBounds();
-
-    items.forEach(item => {
-      const markerContent = document.createElement("div");
-      markerContent.className = "interactive-map-marker";
-      markerContent.textContent = item.mapNumber;
-      markerContent.title = item.name;
-      markerContent.setAttribute("aria-label", item.name);
-
-      const popup = new maplibregl.Popup({ offset: 22, maxWidth: "290px" }).setHTML(`<article class="map-info-window"><img src="${item.image}" alt=""><div><span>${item.category} · ${item.region}</span><h3>${item.name}</h3><p>${item.subtitle}</p><a href="#/destination/${item.id}">View destination →</a></div></article>`);
-      new maplibregl.Marker({ element: markerContent, anchor: "center" }).setLngLat([item.lng, item.lat]).setPopup(popup).addTo(map);
-      visiblePlaces.extend([item.lng, item.lat]);
-    });
+    const placesGeoJson = {
+      type: "FeatureCollection",
+      features: items.map(item => {
+        visiblePlaces.extend([item.lng, item.lat]);
+        return {
+          type: "Feature",
+          geometry: { type: "Point", coordinates: [item.lng, item.lat] },
+          properties: {
+            id: item.id,
+            name: item.name,
+            subtitle: item.subtitle,
+            region: item.region,
+            category: item.category,
+            image: item.image,
+            mapNumber: item.mapNumber
+          }
+        };
+      })
+    };
 
     const fitVisiblePlaces = () => {
       map.resize();
@@ -276,6 +283,47 @@ async function initInteractiveMap(items) {
     };
 
     map.once("load", () => {
+      // ترسم النقاط داخل Canvas الخريطة نفسها حتى لا تنفصل عن مواقعها أثناء التكبير أو التصغير.
+      map.addSource("destinations", { type: "geojson", data: placesGeoJson });
+      map.addLayer({
+        id: "destination-points",
+        type: "circle",
+        source: "destinations",
+        paint: {
+          "circle-radius": 15,
+          "circle-color": "#bd6644",
+          "circle-stroke-width": 3,
+          "circle-stroke-color": "#ffffff"
+        }
+      });
+      map.addLayer({
+        id: "destination-labels",
+        type: "symbol",
+        source: "destinations",
+        layout: {
+          "text-field": ["to-string", ["get", "mapNumber"]],
+          "text-size": 11,
+          "text-allow-overlap": true,
+          "text-ignore-placement": true
+        },
+        paint: { "text-color": "#ffffff" }
+      });
+
+      map.on("click", event => {
+        const features = map.queryRenderedFeatures(event.point, { layers: ["destination-labels", "destination-points"] });
+        if (!features.length) return;
+        const feature = features[0];
+        const place = feature.properties;
+        new maplibregl.Popup({ offset: 22, maxWidth: "290px" })
+          .setLngLat(feature.geometry.coordinates)
+          .setHTML(`<article class="map-info-window"><img src="${place.image}" alt=""><div><span>${place.category} · ${place.region}</span><h3>${place.name}</h3><p>${place.subtitle}</p><a href="#/destination/${place.id}">View destination →</a></div></article>`)
+          .addTo(map);
+      });
+      map.on("mousemove", event => {
+        const overPlace = map.queryRenderedFeatures(event.point, { layers: ["destination-labels", "destination-points"] }).length > 0;
+        map.getCanvas().style.cursor = overPlace ? "pointer" : "";
+      });
+
       fitVisiblePlaces();
       statusElement?.remove();
     });
