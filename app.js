@@ -1,3 +1,5 @@
+import { CARTO_BASEMAP_STYLE } from "./map-config.js";
+
 const IMG = {
   petra: "https://images.unsplash.com/photo-1551171129-8ce1ebb911b3?auto=format&fit=crop&w=1600&q=86",
   wadiRum: "https://images.unsplash.com/photo-1673581209633-effd71cfa863?auto=format&fit=crop&w=1600&q=86",
@@ -14,26 +16,26 @@ const IMG = {
 };
 
 const destinations = [
-  { id: "petra", name: "Petra", subtitle: "Ancient Wonder of the World", region: "Ma'an", category: "History", rating: "4.9", duration: "1–2 days", image: IMG.petra, iconic: true, mapX: 323, mapY: 650, description: "Walk through the Siq to a rose-red city carved into sandstone by the Nabataeans." },
-  { id: "wadi-rum", name: "Wadi Rum", subtitle: "The Valley of the Moon", region: "Aqaba", category: "Adventure", rating: "4.8", duration: "1–2 days", image: IMG.wadiRum, iconic: true, mapX: 363, mapY: 714, description: "Cross monumental desert landscapes shaped by sandstone, wind, and Bedouin heritage." },
-  { id: "dead-sea", name: "Dead Sea", subtitle: "Salt Formations & Healing Waters", region: "Balqa and Madaba", category: "Wellness", rating: "4.7", duration: "Half day", image: IMG.deadSea, iconic: true, mapX: 205, mapY: 370, description: "Float at the lowest point on Earth and watch the sun settle beyond the water." },
-  { id: "jerash", name: "Jerash", subtitle: "Splendor of Imperial Rome", region: "Jerash", category: "History", rating: "4.8", duration: "Half day", image: IMG.jerash, iconic: true, mapX: 255, mapY: 180, description: "Follow colonnaded streets through one of the world’s best-preserved Roman cities." },
-  { id: "aqaba", name: "Aqaba", subtitle: "Coral Reefs & Gulf of Aqaba", region: "Aqaba", category: "Water", rating: "4.6", duration: "1–3 days", image: IMG.aqaba, iconic: true, mapX: 300, mapY: 760, description: "Dive into clear Red Sea water, vibrant reefs, and a relaxed coastal city." },
-  { id: "amman", name: "Amman", subtitle: "Seven Hills of History & Culture", region: "Amman", category: "Culture", rating: "4.5", duration: "1–2 days", image: IMG.amman, iconic: true, mapX: 275, mapY: 255, description: "Discover layers of history, lively neighborhoods, galleries, and Jordanian food." },
-  { id: "madaba", name: "Madaba", subtitle: "Mosaics, old streets & living heritage", region: "Madaba", category: "Culture", rating: "4.7", duration: "Half day", image: IMG.amman, mapX: 255, mapY: 320, description: "See the celebrated mosaic map and explore a welcoming city shaped by layered faiths and traditions." },
-  { id: "mount-nebo", name: "Mount Nebo", subtitle: "A panoramic summit of memory", region: "Madaba", category: "History", rating: "4.7", duration: "2–3 hours", image: IMG.deadSea, mapX: 218, mapY: 303, description: "Look across the Jordan Valley from a historic mountain sanctuary with remarkable mosaics." },
-  { id: "wadi-mujib", name: "Wadi Mujib", subtitle: "Jordan's dramatic water canyon", region: "Madaba", category: "Adventure", rating: "4.8", duration: "Half day", image: IMG.dana, mapX: 235, mapY: 425, description: "Follow a spectacular canyon where sandstone cliffs rise above seasonal river trails." },
-  { id: "karak", name: "Karak Castle", subtitle: "Stone corridors above the plateau", region: "Karak", category: "History", rating: "4.6", duration: "Half day", image: IMG.shobak, mapX: 264, mapY: 485, description: "Explore vaulted passageways, defensive towers, and sweeping views from a storied hilltop fortress." },
-  { id: "dana", name: "Dana Biosphere", subtitle: "Canyons, village trails & ecology", region: "Tafilah", category: "Nature", rating: "4.8", duration: "1–2 days", image: IMG.dana, hidden: true, distance: "190 km from Amman", mapX: 286, mapY: 555, description: "An eco-tourism haven perched above a chain of dramatic sandstone valleys." },
-  { id: "azraq", name: "Azraq Wetland", subtitle: "An oasis in the eastern desert", region: "Zarqa", category: "Nature", rating: "4.6", duration: "Half day", image: IMG.azraq, hidden: true, distance: "115 km from Amman", mapX: 423, mapY: 280, description: "A lush wetland and bird sanctuary surrounded by black basalt desert." },
-  { id: "shobak", name: "Shobak Castle", subtitle: "A solitary Crusader fortress", region: "Ma'an", category: "History", rating: "4.7", duration: "2–3 hours", image: IMG.shobak, hidden: true, distance: "180 km from Amman", mapX: 307, mapY: 610, description: "A windswept hilltop fortress with hidden passages and immense valley views." },
-  { id: "ajloun", name: "Ajloun Castle", subtitle: "Forest highlands & medieval history", region: "Ajloun", category: "History", rating: "4.4", duration: "Half day", image: IMG.ajloun, hidden: true, distance: "76 km from Amman", mapX: 223, mapY: 150, description: "A medieval fortress surrounded by olive groves, forests, and northern hills." },
-  { id: "umm-qais", name: "Umm Qais", subtitle: "Basalt ruins above three countries", region: "Irbid", category: "Culture", rating: "4.7", duration: "Half day", image: IMG.ummQais, hidden: true, distance: "120 km from Amman", mapX: 175, mapY: 92, description: "Explore black-stone ruins and sweeping views over the Jordan Valley." },
-  { id: "iraq-al-amir", name: "Iraq Al-Amir", subtitle: "Valley caves & village craft", region: "Amman", category: "Culture", rating: "4.5", duration: "Half day", image: IMG.iraqAlAmir, hidden: true, distance: "22 km from Amman", mapX: 220, mapY: 275, description: "Meet local artisans and explore a green valley dotted with ancient caves." },
-  { id: "as-salt", name: "As-Salt", subtitle: "Golden-stone houses & hillside lanes", region: "Balqa", category: "Culture", rating: "4.6", duration: "Half day", image: IMG.amman, hidden: true, distance: "30 km from Amman", mapX: 220, mapY: 225, description: "Wander through harmonious old neighborhoods, heritage homes, markets, and steep stone stairways." },
-  { id: "umm-al-jimal", name: "Umm al-Jimal", subtitle: "The black basalt city", region: "Mafraq", category: "History", rating: "4.5", duration: "Half day", image: IMG.jerash, hidden: true, distance: "86 km from Amman", mapX: 390, mapY: 135, description: "Step into an expansive basalt settlement whose houses, churches, and water systems tell a desert story." },
-  { id: "pella", name: "Pella", subtitle: "Ancient layers in the Jordan Valley", region: "Irbid", category: "History", rating: "4.5", duration: "Half day", image: IMG.ummQais, hidden: true, distance: "95 km from Amman", mapX: 178, mapY: 150, description: "Trace thousands of years of settlement among quiet ruins overlooking the fertile Jordan Valley." },
-  { id: "main-hot-springs", name: "Ma'in Hot Springs", subtitle: "Mineral waterfalls below the plateau", region: "Madaba", category: "Wellness", rating: "4.6", duration: "Half day", image: IMG.deadSea, hidden: true, distance: "74 km from Amman", mapX: 243, mapY: 385, description: "Relax beside warm mineral waterfalls tucked into a steep and peaceful volcanic valley." }
+  { id: "petra", name: "Petra", subtitle: "Ancient Wonder of the World", region: "Ma'an", category: "History", rating: "4.9", duration: "1–2 days", image: IMG.petra, iconic: true, lat: 30.3285, lng: 35.4444, description: "Walk through the Siq to a rose-red city carved into sandstone by the Nabataeans." },
+  { id: "wadi-rum", name: "Wadi Rum", subtitle: "The Valley of the Moon", region: "Aqaba", category: "Adventure", rating: "4.8", duration: "1–2 days", image: IMG.wadiRum, iconic: true, lat: 29.5766, lng: 35.4194, description: "Cross monumental desert landscapes shaped by sandstone, wind, and Bedouin heritage." },
+  { id: "dead-sea", name: "Dead Sea", subtitle: "Salt Formations & Healing Waters", region: "Balqa and Madaba", category: "Wellness", rating: "4.7", duration: "Half day", image: IMG.deadSea, iconic: true, lat: 31.559, lng: 35.4732, description: "Float at the lowest point on Earth and watch the sun settle beyond the water." },
+  { id: "jerash", name: "Jerash", subtitle: "Splendor of Imperial Rome", region: "Jerash", category: "History", rating: "4.8", duration: "Half day", image: IMG.jerash, iconic: true, lat: 32.2747, lng: 35.8914, description: "Follow colonnaded streets through one of the world’s best-preserved Roman cities." },
+  { id: "aqaba", name: "Aqaba", subtitle: "Coral Reefs & Gulf of Aqaba", region: "Aqaba", category: "Water", rating: "4.6", duration: "1–3 days", image: IMG.aqaba, iconic: true, lat: 29.5321, lng: 35.0063, description: "Dive into clear Red Sea water, vibrant reefs, and a relaxed coastal city." },
+  { id: "amman", name: "Amman", subtitle: "Seven Hills of History & Culture", region: "Amman", category: "Culture", rating: "4.5", duration: "1–2 days", image: IMG.amman, iconic: true, lat: 31.9539, lng: 35.9106, description: "Discover layers of history, lively neighborhoods, galleries, and Jordanian food." },
+  { id: "madaba", name: "Madaba", subtitle: "Mosaics, old streets & living heritage", region: "Madaba", category: "Culture", rating: "4.7", duration: "Half day", image: IMG.amman, lat: 31.7195, lng: 35.7933, description: "See the celebrated mosaic map and explore a welcoming city shaped by layered faiths and traditions." },
+  { id: "mount-nebo", name: "Mount Nebo", subtitle: "A panoramic summit of memory", region: "Madaba", category: "History", rating: "4.7", duration: "2–3 hours", image: IMG.deadSea, lat: 31.767, lng: 35.7252, description: "Look across the Jordan Valley from a historic mountain sanctuary with remarkable mosaics." },
+  { id: "wadi-mujib", name: "Wadi Mujib", subtitle: "Jordan's dramatic water canyon", region: "Madaba", category: "Adventure", rating: "4.8", duration: "Half day", image: IMG.dana, lat: 31.4667, lng: 35.575, description: "Follow a spectacular canyon where sandstone cliffs rise above seasonal river trails." },
+  { id: "karak", name: "Karak Castle", subtitle: "Stone corridors above the plateau", region: "Karak", category: "History", rating: "4.6", duration: "Half day", image: IMG.shobak, lat: 31.1853, lng: 35.7048, description: "Explore vaulted passageways, defensive towers, and sweeping views from a storied hilltop fortress." },
+  { id: "dana", name: "Dana Biosphere", subtitle: "Canyons, village trails & ecology", region: "Tafilah", category: "Nature", rating: "4.8", duration: "1–2 days", image: IMG.dana, hidden: true, distance: "190 km from Amman", lat: 30.626, lng: 35.5207, description: "An eco-tourism haven perched above a chain of dramatic sandstone valleys." },
+  { id: "azraq", name: "Azraq Wetland", subtitle: "An oasis in the eastern desert", region: "Zarqa", category: "Nature", rating: "4.6", duration: "Half day", image: IMG.azraq, hidden: true, distance: "115 km from Amman", lat: 31.8325, lng: 36.8174, description: "A lush wetland and bird sanctuary surrounded by black basalt desert." },
+  { id: "shobak", name: "Shobak Castle", subtitle: "A solitary Crusader fortress", region: "Ma'an", category: "History", rating: "4.7", duration: "2–3 hours", image: IMG.shobak, hidden: true, distance: "180 km from Amman", lat: 30.5317, lng: 35.56, description: "A windswept hilltop fortress with hidden passages and immense valley views." },
+  { id: "ajloun", name: "Ajloun Castle", subtitle: "Forest highlands & medieval history", region: "Ajloun", category: "History", rating: "4.4", duration: "Half day", image: IMG.ajloun, hidden: true, distance: "76 km from Amman", lat: 32.3256, lng: 35.7272, description: "A medieval fortress surrounded by olive groves, forests, and northern hills." },
+  { id: "umm-qais", name: "Umm Qais", subtitle: "Basalt ruins above three countries", region: "Irbid", category: "Culture", rating: "4.7", duration: "Half day", image: IMG.ummQais, hidden: true, distance: "120 km from Amman", lat: 32.655, lng: 35.6844, description: "Explore black-stone ruins and sweeping views over the Jordan Valley." },
+  { id: "iraq-al-amir", name: "Iraq Al-Amir", subtitle: "Valley caves & village craft", region: "Amman", category: "Culture", rating: "4.5", duration: "Half day", image: IMG.iraqAlAmir, hidden: true, distance: "22 km from Amman", lat: 31.9174, lng: 35.7517, description: "Meet local artisans and explore a green valley dotted with ancient caves." },
+  { id: "as-salt", name: "As-Salt", subtitle: "Golden-stone houses & hillside lanes", region: "Balqa", category: "Culture", rating: "4.6", duration: "Half day", image: IMG.amman, hidden: true, distance: "30 km from Amman", lat: 32.0392, lng: 35.7272, description: "Wander through harmonious old neighborhoods, heritage homes, markets, and steep stone stairways." },
+  { id: "umm-al-jimal", name: "Umm al-Jimal", subtitle: "The black basalt city", region: "Mafraq", category: "History", rating: "4.5", duration: "Half day", image: IMG.jerash, hidden: true, distance: "86 km from Amman", lat: 32.328, lng: 36.368, description: "Step into an expansive basalt settlement whose houses, churches, and water systems tell a desert story." },
+  { id: "pella", name: "Pella", subtitle: "Ancient layers in the Jordan Valley", region: "Irbid", category: "History", rating: "4.5", duration: "Half day", image: IMG.ummQais, hidden: true, distance: "95 km from Amman", lat: 32.45, lng: 35.6167, description: "Trace thousands of years of settlement among quiet ruins overlooking the fertile Jordan Valley." },
+  { id: "main-hot-springs", name: "Ma'in Hot Springs", subtitle: "Mineral waterfalls below the plateau", region: "Madaba", category: "Wellness", rating: "4.6", duration: "Half day", image: IMG.deadSea, hidden: true, distance: "74 km from Amman", lat: 31.6095, lng: 35.6154, description: "Relax beside warm mineral waterfalls tucked into a steep and peaceful volcanic valley." }
 ];
 
 const activities = [
@@ -198,35 +200,69 @@ function activityDetailPage(id) {
   return `${nav("activities")}<main id="main"><section class="detail-hero" style="--detail-image:url('${item.image}')"><div class="container"><span class="tag">${item.type} Experience</span></div></section><section class="section"><div class="container detail-layout"><article><span class="eyebrow">${item.destination} · ${item.duration}</span><h1 style="font-size:clamp(2.6rem,4vw,4rem)">${item.name}</h1><p class="detail-copy">${item.description} This experience is presented without invented prices or access rules; confirm current details with your chosen local operator before visiting.</p><div class="info-grid"><div class="info-box"><strong>Duration</strong>${item.duration}</div><div class="info-box"><strong>Experience</strong>${item.type}</div><div class="info-box"><strong>Location</strong>${item.destination}</div></div><h2 style="font-size:2rem;margin-top:44px">What makes it special</h2><ul class="highlights"><li>A memorable perspective on Jordan’s landscape and culture</li><li>Suitable for travelers seeking authentic local experiences</li><li>Simple to connect with the rest of your itinerary</li></ul><h2 style="font-size:2rem;margin-top:44px">Related Destination</h2>${destinationCard(destination, destination.hidden)}</article><aside class="booking-box"><span class="eyebrow">Experience Jordan</span><h3>Add this experience</h3><p>Include ${item.name} alongside ${item.destination} in your itinerary.</p><div class="booking-actions"><button class="btn primary wide" data-add-trip="${destination.id}">Add to Trip Planner</button><a class="btn outline wide" href="#/destination/${destination.id}">View ${destination.name}</a></div></aside></div></section></main>${footer()}`;
 }
 
-function jordanMapGraphic(items) {
-  return `<svg class="jordan-map" viewBox="0 0 620 820" role="img" aria-labelledby="jordan-map-title jordan-map-desc">
-    <title id="jordan-map-title">Complete map of Jordan and featured destinations</title>
-    <desc id="jordan-map-desc">A north-to-south map of Jordan showing destinations from Umm Qais to Aqaba.</desc>
-    <defs>
-      <linearGradient id="jordan-land" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#efe2c4"/><stop offset=".52" stop-color="#dcc391"/><stop offset="1" stop-color="#cda977"/></linearGradient>
-      <pattern id="contours" width="64" height="54" patternUnits="userSpaceOnUse"><path d="M-8 18 C10 4 31 5 51 19 S82 35 96 18" fill="none" stroke="#876f4d" stroke-opacity=".16" stroke-width="2"/></pattern>
-      <clipPath id="jordan-clip"><path d="M190 78 L267 74 L303 119 L497 219 L469 319 L445 395 L420 475 L392 560 L365 642 L345 704 L322 772 L281 787 L274 727 L246 658 L238 590 L220 520 L214 462 L191 414 L198 363 L184 316 L203 271 L190 226 L205 184 L185 140 Z"/></clipPath>
-      <filter id="map-shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#342919" flood-opacity=".22"/></filter>
-    </defs>
-    <rect width="620" height="820" fill="#dce5df"/>
-    <path class="map-water-line" d="M164 80 C142 170 145 242 169 300 C184 337 177 377 165 414 C150 459 166 521 190 585"/>
-    <path class="dead-sea" d="M181 315 C168 337 169 371 177 397 C182 415 179 439 188 452 C197 435 199 405 194 378 C190 350 196 329 181 315 Z"/>
-    <path class="gulf" d="M258 815 C270 779 286 760 304 746 C313 769 311 795 307 820 Z"/>
-    <path class="jordan-shape" filter="url(#map-shadow)" d="M190 78 L267 74 L303 119 L497 219 L469 319 L445 395 L420 475 L392 560 L365 642 L345 704 L322 772 L281 787 L274 727 L246 658 L238 590 L220 520 L214 462 L191 414 L198 363 L184 316 L203 271 L190 226 L205 184 L185 140 Z"/>
-    <rect x="175" y="65" width="335" height="735" fill="url(#contours)" clip-path="url(#jordan-clip)"/>
-    <g class="governorate-lines" clip-path="url(#jordan-clip)">
-      <path d="M183 142 L323 144 L397 167"/><path d="M188 205 L350 207 L467 239"/><path d="M193 276 L355 282 L467 315"/><path d="M193 353 L431 360"/><path d="M190 425 L409 443"/><path d="M218 512 L392 545"/><path d="M235 590 L365 633"/><path d="M251 665 L338 705"/><path d="M274 206 L260 360 L305 510"/><path d="M347 207 L332 360 L361 535"/>
-    </g>
-    <g class="map-labels"><text x="339" y="400" class="country-label">JORDAN</text><text x="120" y="388" class="water-label" transform="rotate(-79 120 388)">DEAD SEA</text><text x="253" y="806" class="water-label">GULF OF AQABA</text><text x="82" y="205">Jordan Valley</text><text x="410" y="194">Eastern Desert</text><text x="248" y="46">Northern Jordan</text><text x="354" y="688">Southern Jordan</text></g>
-    <g class="map-markers">${items.map(item => `<a href="#/destination/${item.id}" aria-label="${item.name}"><g class="map-marker" transform="translate(${item.mapX} ${item.mapY})"><title>${item.name}, ${item.region}</title><circle r="14"/><text y="1">${item.mapNumber}</text></g></a>`).join("")}</g>
-    <g class="map-compass" transform="translate(548 80)"><circle r="29"/><path d="M0-20 7 0 0 20-7 0Z"/><text y="-35">N</text></g>
-  </svg>`;
+let mapLibrePromise;
+
+// تحميل مكتبة MapLibre عند فتح صفحة الخريطة فقط، بدون React أو Node.js.
+function loadMapLibre() {
+  if (!mapLibrePromise) {
+    mapLibrePromise = import("https://unpkg.com/maplibre-gl@^6.11.2/dist/maplibre-gl.mjs");
+  }
+  return mapLibrePromise;
+}
+
+function filteredMapItems() {
+  const query = state.mapQuery.trim().toLowerCase();
+  return destinations.map((item, index) => ({ ...item, mapNumber: index + 1 })).filter(item => !query || `${item.name} ${item.region} ${item.category}`.toLowerCase().includes(query));
+}
+
+async function initInteractiveMap(items) {
+  const mapElement = document.querySelector("#interactive-map");
+  const statusElement = document.querySelector("#map-status");
+  if (!mapElement) return;
+
+  try {
+    const maplibregl = await loadMapLibre();
+    if (!document.body.contains(mapElement)) return;
+
+    // [غرب، جنوب] ثم [شرق، شمال]: تمنع سحب الخريطة بعيدًا عن الأردن.
+    const jordanBounds = [[34.7, 28.8], [39.4, 33.4]];
+    const map = new maplibregl.Map({
+      container: mapElement,
+      style: CARTO_BASEMAP_STYLE,
+      center: [36.5, 31.2],
+      zoom: 6,
+      minZoom: 5.8,
+      maxZoom: 15,
+      maxBounds: jordanBounds,
+      attributionControl: true
+    });
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
+
+    items.forEach(item => {
+      const markerContent = document.createElement("div");
+      markerContent.className = "interactive-map-marker";
+      markerContent.textContent = item.mapNumber;
+      markerContent.title = item.name;
+      markerContent.setAttribute("aria-label", item.name);
+
+      const popup = new maplibregl.Popup({ offset: 22, maxWidth: "290px" }).setHTML(`<article class="map-info-window"><img src="${item.image}" alt=""><div><span>${item.category} · ${item.region}</span><h3>${item.name}</h3><p>${item.subtitle}</p><a href="#/destination/${item.id}">View destination →</a></div></article>`);
+      new maplibregl.Marker({ element: markerContent, anchor: "bottom" }).setLngLat([item.lng, item.lat]).setPopup(popup).addTo(map);
+    });
+
+    map.once("load", () => statusElement?.remove());
+    map.on("error", event => console.info("Map tile notice:", event.error?.message || "A map tile could not be loaded."));
+  } catch (error) {
+    if (statusElement) {
+      statusElement.innerHTML = `<strong>The interactive map could not load</strong><p>Check your internet connection, then refresh this page.</p>`;
+      statusElement.classList.add("error");
+    }
+    console.info(error.message);
+  }
 }
 
 function mapPage() {
-  const query = state.mapQuery.trim().toLowerCase();
-  const mapItems = destinations.map((item, index) => ({ ...item, mapNumber: index + 1 })).filter(item => !query || `${item.name} ${item.region} ${item.category}`.toLowerCase().includes(query));
-  return `${nav("map")}<main id="main"><div class="map-layout"><aside class="map-panel"><span class="eyebrow">Explore from north to south</span><h1>Jordan on the Map</h1><p class="map-intro">Find ${destinations.length} remarkable places across the Kingdom, from green northern hills to Aqaba's Red Sea coast.</p><form class="search-box" data-form="map-search"><input name="q" value="${escapeHtml(state.mapQuery)}" placeholder="Search places or regions" aria-label="Search the Jordan map"><span>⌕</span></form><div class="map-results"><strong>${mapItems.length}</strong> ${mapItems.length === 1 ? "place" : "places"} shown</div>${mapItems.length ? mapItems.map(item => `<a class="map-card" href="#/destination/${item.id}"><span class="map-card-number">${item.mapNumber}</span><img src="${item.image}" alt="${item.name}"><div><h3>${item.name}</h3><p>${item.region} · ${item.category}</p></div></a>`).join("") : `<div class="map-empty"><strong>No places found</strong><p>Try another city, region, or interest.</p></div>`}</aside><section class="map-canvas" aria-label="Map showing places across Jordan">${jordanMapGraphic(mapItems)}</section></div></main>`;
+  const mapItems = filteredMapItems();
+  return `${nav("map")}<main id="main"><div class="map-layout"><aside class="map-panel"><span class="eyebrow">Explore from north to south</span><h1>Jordan on the Map</h1><p class="map-intro">Find ${destinations.length} remarkable places across the Kingdom, from green northern hills to Aqaba's Red Sea coast.</p><form class="search-box" data-form="map-search"><input name="q" value="${escapeHtml(state.mapQuery)}" placeholder="Search places or regions" aria-label="Search the Jordan map"><span>⌕</span></form><div class="map-results"><strong>${mapItems.length}</strong> ${mapItems.length === 1 ? "place" : "places"} shown</div>${mapItems.length ? mapItems.map(item => `<a class="map-card" href="#/destination/${item.id}"><span class="map-card-number">${item.mapNumber}</span><img src="${item.image}" alt="${item.name}"><div><h3>${item.name}</h3><p>${item.region} · ${item.category}</p></div></a>`).join("") : `<div class="map-empty"><strong>No places found</strong><p>Try another city, region, or interest.</p></div>`}</aside><section class="map-canvas" aria-label="Interactive map showing places across Jordan"><div id="interactive-map" class="interactive-map"></div><div id="map-status" class="map-status"><span class="spinner" aria-hidden="true"></span><strong>Loading the map…</strong></div></section></div></main>`;
 }
 
 function plannerSidebar(active = 1) {
@@ -293,6 +329,7 @@ function render() {
   app.innerHTML = html;
   document.title = `${page === "home" ? "Beyond Jordan" : page.replaceAll("-", " ").replace(/\b\w/g, c => c.toUpperCase())} — Beyond Jordan`;
   window.scrollTo({ top: 0, behavior: "instant" });
+  if (page === "map") requestAnimationFrame(() => initInteractiveMap(filteredMapItems()));
 }
 
 function toast(message) {

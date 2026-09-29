@@ -142,22 +142,22 @@ p { color: var(--muted); line-height: 1.7; }
 .map-intro { margin-bottom: 24px; font-size: .92rem; line-height: 1.6; }
 .map-results { margin: 18px 0 10px; color: var(--muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; }
 .map-results strong { color: var(--green-900); }
-.map-canvas { position: relative; display: grid; place-items: center; min-height: 740px; overflow: hidden; background: radial-gradient(circle at 55% 44%, #eef2ed 0, #dce5df 48%, #ccd9d2 100%); }
-.jordan-map { width: min(100%, 850px); height: 100%; max-height: calc(100vh - 96px); min-height: 720px; }
-.jordan-shape { fill: url(#jordan-land); stroke: #745f3e; stroke-width: 4; stroke-linejoin: round; }
-.governorate-lines path { fill: none; stroke: #8d744d; stroke-width: 1.7; stroke-dasharray: 5 6; opacity: .55; }
-.map-water-line { fill: none; stroke: #9abbb6; stroke-width: 5; stroke-linecap: round; opacity: .8; }
-.dead-sea, .gulf { fill: #76a8ae; stroke: #fff; stroke-width: 2; }
-.map-labels text { fill: #365247; font: 600 13px "DM Sans", sans-serif; letter-spacing: .06em; }
-.map-labels .country-label { fill: rgba(38,69,55,.18); font: 600 48px "Playfair Display", serif; letter-spacing: .14em; text-anchor: middle; transform: rotate(-66deg); transform-origin: 339px 400px; }
-.map-labels .water-label { fill: #47797e; font-size: 10px; letter-spacing: .14em; }
-.map-marker { cursor: pointer; transition: transform .18s ease; }
-.map-marker circle { fill: var(--terracotta); stroke: #fff; stroke-width: 4; filter: drop-shadow(0 4px 5px rgba(54,34,22,.28)); transition: fill .18s ease, r .18s ease; }
-.map-marker text { fill: #fff; font: 700 10px "DM Sans", sans-serif; text-anchor: middle; dominant-baseline: middle; pointer-events: none; }
-.map-marker:hover circle, .map-marker:focus circle { fill: var(--green-900); r: 17; }
-.map-compass circle { fill: rgba(255,255,255,.78); stroke: rgba(18,60,47,.22); }
-.map-compass path { fill: var(--green-900); }
-.map-compass text { fill: var(--green-900); font: 700 12px "DM Sans", sans-serif; text-anchor: middle; }
+.map-canvas { position: relative; min-height: 740px; overflow: hidden; background: #dce5df; }
+.interactive-map { width: 100%; height: 100%; min-height: inherit; }
+.map-status { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 28px; text-align: center; color: var(--green-900); background: linear-gradient(135deg, #eef2ed, #dce5df); }
+.map-status .spinner { min-height: 46px; }
+.map-status.error { max-width: 520px; height: fit-content; inset: 50% auto auto 50%; border: 1px solid rgba(18,60,47,.13); border-radius: var(--radius); background: #fff; box-shadow: var(--shadow); transform: translate(-50%, -50%); }
+.map-status.error .spinner { display: none; }
+.map-status p { max-width: 410px; margin: 0; }
+.map-status code { padding: 2px 6px; border-radius: 4px; background: var(--sand-100); }
+.interactive-map-marker { width: 30px; height: 30px; display: grid; place-items: center; border: 3px solid #fff; border-radius: 50%; color: #fff; background: var(--terracotta); box-shadow: 0 5px 12px rgba(39,25,16,.32); font: 700 .72rem "DM Sans", sans-serif; cursor: pointer; }
+.map-info-window { width: 260px; overflow: hidden; color: var(--ink); background: #fff; }
+.map-info-window img { width: 100%; height: 118px; object-fit: cover; border-radius: 7px; }
+.map-info-window div { padding: 13px 4px 5px; }
+.map-info-window span { color: var(--terracotta); font-size: .68rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+.map-info-window h3 { margin: 5px 0; font-size: 1.25rem; }
+.map-info-window p { margin: 0 0 10px; font-size: .78rem; }
+.map-info-window a { color: var(--green-900); font-size: .78rem; font-weight: 700; }
 .map-card { display: grid; grid-template-columns: 28px 88px 1fr; gap: 12px; align-items: center; padding: 10px; margin: 10px 0; border: 1px solid var(--sand-200); border-radius: 10px; background: #fff; transition: border-color .18s ease, transform .18s ease, box-shadow .18s ease; }
 .map-card:hover { border-color: var(--terracotta); transform: translateX(3px); box-shadow: var(--shadow-soft); }
 .map-card-number { width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; color: #fff; background: var(--terracotta); font-size: .72rem; font-weight: 700; }
@@ -257,7 +257,7 @@ p { color: var(--muted); line-height: 1.7; }
   .map-layout { height: auto; }
   .map-panel { max-height: none; border-right: 0; border-bottom: 1px solid var(--sand-200); }
   .map-canvas { order: -1; min-height: 680px; }
-  .jordan-map { min-height: 660px; max-height: 760px; }
+  .interactive-map { min-height: 680px; }
   .planner-shell { grid-template-columns: 1fr; }
   .planner-sidebar { display: flex; gap: 16px; align-items: center; overflow-x: auto; }
   .planner-sidebar h3, .planner-sidebar p { display: none; }
@@ -298,6 +298,5 @@ p { color: var(--muted); line-height: 1.7; }
   .map-panel { padding: 30px 20px; }
   .map-panel h1 { font-size: 2.35rem; }
   .map-canvas { min-height: 600px; }
-  .jordan-map { width: 100%; min-height: 580px; }
-  .map-labels text:not(.country-label) { display: none; }
+  .interactive-map { min-height: 600px; }
 }
