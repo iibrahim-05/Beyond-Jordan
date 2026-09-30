@@ -125,6 +125,7 @@ const escapeHtml = (value = "") => String(value).replace(/[&<>'"]/g, char => ({ 
 const route = () => location.hash.replace(/^#\/?/, "") || "home";
 const findDestination = id => destinations.find(item => item.id === id) || destinations[0];
 const findActivity = id => activities.find(item => item.id === id) || activities[0];
+const findHeritageSite = id => heritageSites.find(item => item.id === id);
 const storeLocal = () => {
   localStorage.setItem("bj-favorites", JSON.stringify(state.favorites));
   localStorage.setItem("bj-trip", JSON.stringify(state.trip));
@@ -327,6 +328,38 @@ function destinationDetailPage(id) {
   </main>${footer()}`;
 }
 
+function heritageDetailPage(id) {
+  const item = findHeritageSite(id);
+  if (!item) return notFoundPage();
+
+  const nearby = heritageSites
+    .filter(place => place.id !== item.id)
+    .map(place => ({ ...place, proximity: Math.hypot(place.lat - item.lat, place.lng - item.lng) }))
+    .sort((a, b) => a.proximity - b.proximity)
+    .slice(0, 3);
+  const gallery = [item, ...nearby].map((place, index) => ({
+    src: place.image,
+    label: index === 0
+      ? (place.imageNote ? `${place.name} · Regional reference photograph` : `${place.name} · Documented view`)
+      : `Nearby: ${place.name}`
+  }));
+  const imageNotice = item.imageNote
+    ? `<section class="local-note"><span class="local-note-icon">◉</span><div><span class="eyebrow">Image transparency</span><h3>Regional reference photograph</h3><p>The main image illustrates archaeology from the surrounding region and is not presented as an exact photograph of ${item.name}. The location, coordinates, era, and written description belong to this site.</p></div></section>`
+    : "";
+
+  return `${nav("map")}<main id="main" class="destination-experience" style="--place-accent:#d7a45f;--place-dark:#123c2f;--place-soft:#f5efe4">
+    <section class="detail-hero" style="--detail-image:url('${item.image}')"><div class="container"><div class="detail-hero-copy"><span class="tag">Archaeological Map Site</span><span class="eyebrow">${item.region} · Jordan</span><h1>${item.name}</h1><p>${item.description}</p><div class="detail-hero-meta"><span>${item.category}</span><span>${item.era}</span></div></div></div></section>
+    <section class="place-intro"><div class="container detail-layout"><article>
+      <span class="eyebrow">Jordan’s heritage landscape</span><h2>A closer look at ${item.name}</h2><p class="detail-lead">${item.description}</p>
+      <div class="info-grid"><div class="info-box"><span>01</span><strong>Historical period</strong>${item.era}</div><div class="info-box"><span>02</span><strong>Region</strong>${item.region}, Jordan</div><div class="info-box"><span>03</span><strong>Coordinates</strong>${item.lat.toFixed(5)}, ${item.lng.toFixed(5)}</div></div>
+      <section class="place-section"><div class="place-section-head"><div><span class="eyebrow">A visual preview</span><h2>The site & nearby heritage</h2></div><p>Open an image for a closer look. Reference and nearby photographs are labeled clearly.</p></div><div class="place-gallery">${gallery.map((photo, index) => `<button class="gallery-tile gallery-tile-${index + 1}" data-gallery-image="${escapeHtml(photo.src)}" data-gallery-label="${escapeHtml(photo.label)}" aria-label="Open ${escapeHtml(photo.label)}"><img src="${photo.src}" alt="${escapeHtml(photo.label)}" loading="lazy"><span>${escapeHtml(photo.label)}</span></button>`).join("")}</div></section>
+      ${imageNotice}
+      <section class="local-note"><span class="local-note-icon">⌖</span><div><span class="eyebrow">Plan responsibly</span><h3>Check access before visiting</h3><p>Opening hours, road conditions, and public access can change. Confirm current information with Jordan’s Department of Antiquities, the Ministry of Tourism, or a trusted local guide before setting out.</p></div></section>
+      <section class="place-section"><div class="place-section-head"><div><span class="eyebrow">Continue nearby</span><h2>More heritage places</h2></div><a class="text-link" href="#/map">See all on the map →</a></div><div class="nearby-row">${nearby.map(place => `<a class="mini-card" href="#/heritage/${place.id}"><img src="${place.image}" alt="${place.name}" loading="lazy"><div><span class="eyebrow">${place.category}</span><strong>${place.name}</strong><p>${place.region} · ${place.era}</p></div></a>`).join("")}</div></section>
+    </article><aside class="booking-box place-booking"><span class="ai-match-badge">⌖ Heritage map entry</span><h3>Find ${item.name} on the map</h3><p>Return to the interactive map to compare this site with nearby places across Jordan.</p><div class="match-tags"><span>${item.region}</span><span>${item.category}</span><span>${item.era}</span></div><div class="booking-actions"><a class="btn primary wide" href="#/map">Back to Jordan Map</a><a class="btn outline wide" href="#/ai-guide">Ask the AI Guide</a></div></aside></div></section>
+  </main>${footer()}`;
+}
+
 function activityDetailPage(id) {
   const item = findActivity(id);
   const destination = destinations.find(x => x.name === item.destination) || destinations[0];
@@ -336,6 +369,8 @@ function activityDetailPage(id) {
 let mapLibrePromise;
 let activeMap;
 let activeMapObserver;
+let activeMapLibrary;
+let activeMapItems = new Map();
 
 // تحميل مكتبة MapLibre عند فتح صفحة الخريطة فقط، بدون React أو Node.js.
 function loadMapLibre() {
@@ -350,6 +385,24 @@ function destroyInteractiveMap() {
   activeMapObserver = undefined;
   activeMap?.remove();
   activeMap = undefined;
+  activeMapLibrary = undefined;
+  activeMapItems = new Map();
+}
+
+function mapPopupHtml(place) {
+  const detailsRoute = place.kind === "heritage" ? `heritage/${place.id}` : `destination/${place.id}`;
+  const imageLabel = place.kind === "heritage"
+    ? `<small>${place.imageNote || "Documented heritage photograph"}</small>`
+    : "";
+  return `<article class="map-info-window">${place.image ? `<img src="${place.image}" alt="${escapeHtml(place.name)}" loading="lazy">` : ""}<div><span>${escapeHtml(place.category)} · ${escapeHtml(place.region)}</span><h3>${escapeHtml(place.name)}</h3><p>${escapeHtml(place.era || place.subtitle || "")}</p>${place.kind === "heritage" ? `<p>${escapeHtml(place.description || "")}</p>${imageLabel}` : ""}<a href="#/${detailsRoute}">View full details →</a></div></article>`;
+}
+
+function openActiveMapPopup(place) {
+  if (!activeMap || !activeMapLibrary || !place) return;
+  new activeMapLibrary.Popup({ offset: 22, maxWidth: "290px" })
+    .setLngLat([place.lng, place.lat])
+    .setHTML(mapPopupHtml(place))
+    .addTo(activeMap);
 }
 
 function filteredMapItems() {
@@ -371,6 +424,8 @@ async function initInteractiveMap(items) {
   try {
     const maplibregl = await loadMapLibre();
     if (!document.body.contains(mapElement)) return;
+    activeMapLibrary = maplibregl;
+    activeMapItems = new Map(items.map(item => [item.id, item]));
 
     // [غرب، جنوب] ثم [شرق، شمال]: تمنع سحب الخريطة بعيدًا عن الأردن.
     // هامش قريب حول المملكة يسمح بإظهار شكل الأردن الطويل كاملًا داخل الشاشات العريضة.
@@ -490,11 +545,8 @@ async function initInteractiveMap(items) {
         const features = map.queryRenderedFeatures(event.point, { layers: ["destination-labels", "destination-points", "heritage-points"] });
         if (!features.length) return;
         const feature = features[0];
-        const place = feature.properties;
-        new maplibregl.Popup({ offset: 22, maxWidth: "290px" })
-          .setLngLat(feature.geometry.coordinates)
-          .setHTML(`<article class="map-info-window">${place.image ? `<img src="${place.image}" alt="${place.name}" loading="lazy">` : ""}<div><span>${place.category} · ${place.region}</span><h3>${place.name}</h3><p>${place.era || place.subtitle}</p>${place.kind === "heritage" ? `<p>${place.description}</p><small>${place.imageNote || "Documented heritage photograph"}</small>` : `<a href="#/destination/${place.id}">View full details →</a>`}</div></article>`)
-          .addTo(map);
+        const place = activeMapItems.get(feature.properties.id) || feature.properties;
+        openActiveMapPopup(place);
       });
       let hoveredPlaceId = null;
       map.on("mousemove", event => {
@@ -857,6 +909,7 @@ function render(options = {}) {
   };
   let html;
   if (page === "destination") html = destinationDetailPage(id);
+  else if (page === "heritage") html = heritageDetailPage(id);
   else if (page === "activity") html = activityDetailPage(id);
   else html = (pages[page] || notFoundPage)();
   app.innerHTML = html;
@@ -985,7 +1038,9 @@ async function logout() {
 app.addEventListener("click", async event => {
   const mapFocus = event.target.closest("[data-map-focus]");
   if (mapFocus && activeMap) {
+    const place = activeMapItems.get(mapFocus.dataset.mapFocus);
     activeMap.flyTo({ center: [Number(mapFocus.dataset.lng), Number(mapFocus.dataset.lat)], zoom: 11.5, essential: true });
+    openActiveMapPopup(place);
     document.querySelector("#interactive-map")?.scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   }
