@@ -364,6 +364,7 @@ async function initInteractiveMap(items) {
       features: items.map(item => {
         visiblePlaces.extend([item.lng, item.lat]);
         return {
+          id: item.mapNumber,
           type: "Feature",
           geometry: { type: "Point", coordinates: [item.lng, item.lat] },
           properties: {
@@ -394,14 +395,30 @@ async function initInteractiveMap(items) {
       // ترسم النقاط داخل Canvas الخريطة نفسها حتى لا تنفصل عن مواقعها أثناء التكبير أو التصغير.
       map.addSource("destinations", { type: "geojson", data: placesGeoJson });
       map.addLayer({
+        id: "destination-halos",
+        type: "circle",
+        source: "destinations",
+        paint: {
+          "circle-radius": ["case", ["boolean", ["feature-state", "hover"], false], 28, 20],
+          "circle-color": "#bd6644",
+          "circle-opacity": ["case", ["boolean", ["feature-state", "hover"], false], 0.24, 0.09],
+          "circle-blur": 0.35,
+          "circle-radius-transition": { duration: 180, delay: 0 },
+          "circle-opacity-transition": { duration: 180, delay: 0 }
+        }
+      });
+      map.addLayer({
         id: "destination-points",
         type: "circle",
         source: "destinations",
         paint: {
-          "circle-radius": 15,
-          "circle-color": "#bd6644",
-          "circle-stroke-width": 3,
-          "circle-stroke-color": "#ffffff"
+          "circle-radius": ["case", ["boolean", ["feature-state", "hover"], false], 19, 15],
+          "circle-color": ["case", ["boolean", ["feature-state", "hover"], false], "#0b2d23", "#bd6644"],
+          "circle-stroke-width": ["case", ["boolean", ["feature-state", "hover"], false], 4, 3],
+          "circle-stroke-color": "#ffffff",
+          "circle-radius-transition": { duration: 180, delay: 0 },
+          "circle-color-transition": { duration: 180, delay: 0 },
+          "circle-stroke-width-transition": { duration: 180, delay: 0 }
         }
       });
       map.addLayer({
@@ -427,9 +444,23 @@ async function initInteractiveMap(items) {
           .setHTML(`<article class="map-info-window"><img src="${place.image}" alt=""><div><span>${place.category} · ${place.region}</span><h3>${place.name}</h3><p>${place.subtitle}</p><a href="#/destination/${place.id}">View destination →</a></div></article>`)
           .addTo(map);
       });
+      let hoveredPlaceId = null;
       map.on("mousemove", event => {
-        const overPlace = map.queryRenderedFeatures(event.point, { layers: ["destination-labels", "destination-points"] }).length > 0;
-        map.getCanvas().style.cursor = overPlace ? "pointer" : "";
+        const features = map.queryRenderedFeatures(event.point, { layers: ["destination-labels", "destination-points"] });
+        const nextId = features[0]?.id ?? null;
+        if (hoveredPlaceId !== null && hoveredPlaceId !== nextId) {
+          map.setFeatureState({ source: "destinations", id: hoveredPlaceId }, { hover: false });
+        }
+        if (nextId !== null && hoveredPlaceId !== nextId) {
+          map.setFeatureState({ source: "destinations", id: nextId }, { hover: true });
+        }
+        hoveredPlaceId = nextId;
+        map.getCanvas().style.cursor = nextId !== null ? "pointer" : "";
+      });
+      map.on("mouseout", () => {
+        if (hoveredPlaceId !== null) map.setFeatureState({ source: "destinations", id: hoveredPlaceId }, { hover: false });
+        hoveredPlaceId = null;
+        map.getCanvas().style.cursor = "";
       });
 
       fitVisiblePlaces();
@@ -793,7 +824,7 @@ async function toggleFavorite(id) {
   if (!requireAuth(`favorite:${id}`)) return;
   state.favorites = state.favorites.includes(id) ? state.favorites.filter(item => item !== id) : [...state.favorites, id];
   await syncCloudData();
-  render();
+  render({ preserveScroll: true });
   toast(state.favorites.includes(id) ? `${findDestination(id).name} saved to favorites.` : `${findDestination(id).name} removed from favorites.`);
 }
 
