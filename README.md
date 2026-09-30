@@ -43,6 +43,8 @@ The map uses MapLibre GL JS from a CDN with CARTO's Voyager basemap style. It ru
 
 The AI Guide combines an AI trip maker, conversational Jordan concierge, Travel DNA, hidden-gem matching, and one-click transfer into the existing Trip Planner. It uses Firebase AI Logic with the Gemini Developer API when enabled in the Firebase console. If AI Logic is unavailable, the interface falls back to a local destination-aware planner so the experience never breaks.
 
+The concierge keeps recent conversation context, answers in Arabic or English, provides deeper destination stories and practical explanations, and preserves the chat position while messages are sent. Time-sensitive topics are always marked for current official verification.
+
 Before production use, finish the Firebase AI Logic guided setup, keep Firebase App Check enforced, and place the reCAPTCHA Enterprise site key in `appCheckSiteKey` inside `firebase-config.js`. No Gemini API key is stored in this repository.
 
 ## Main experience

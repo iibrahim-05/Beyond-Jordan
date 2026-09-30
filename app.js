@@ -132,7 +132,7 @@ async function initFirebase() {
       const ai = firebaseAI.getAI(firebase, { backend: new firebaseAI.GoogleAIBackend() });
       state.firebase.aiModel = firebaseAI.getGenerativeModel(ai, {
         model: "gemini-3.8-flash",
-        systemInstruction: "You are Beyond Jordan AI, a concise and thoughtful Jordan travel concierge. Use only the destination data supplied by the app. Never invent live prices, opening hours, permits, weather, safety conditions, or availability. Clearly tell travelers to verify time-sensitive details."
+        systemInstruction: "You are Beyond Jordan AI, a warm, knowledgeable Jordan travel concierge. Answer in the traveler's language. Give useful depth: explain the story and significance, what the traveler can experience, practical planning context, and related places when relevant. Use the verified destination knowledge supplied by the app and established general knowledge about Jordan. Never invent live prices, opening hours, permits, weather, safety conditions, visa rules, or availability; clearly label time-sensitive information that must be verified."
       });
     } catch (aiError) {
       console.info("Firebase AI Logic is not enabled yet; the local smart concierge remains available.");
@@ -450,7 +450,10 @@ function mapPage() {
 const AI_INTERESTS = ["History", "Nature", "Adventure", "Culture", "Water", "Wellness"];
 
 function destinationCatalog() {
-  return destinations.map(item => `${item.id}: ${item.name} | ${item.region} | ${item.category} | ${item.duration}${item.hidden ? " | hidden gem" : ""} | ${item.description}`).join("\n");
+  return destinations.map(item => {
+    const content = destinationContent(item);
+    return `${item.id}: ${item.name} | ${item.region} | ${item.category} | ${item.duration}${item.hidden ? " | hidden gem" : ""} | ${item.description} Story: ${content.story} Highlights: ${content.love.join("; ")} Practical note: ${content.tip}`;
+  }).join("\n");
 }
 
 function buildSmartPlan(preferences) {
@@ -535,25 +538,95 @@ async function createAiPlan(form) {
   document.querySelector("#ai-result")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+const DESTINATION_ALIASES = {
+  petra: ["petra", "البتراء"], "wadi-rum": ["wadi rum", "وادي رم"], "dead-sea": ["dead sea", "البحر الميت"],
+  jerash: ["jerash", "جرش"], aqaba: ["aqaba", "العقبة"], amman: ["amman", "عمان", "عمّان"],
+  madaba: ["madaba", "مادبا"], "mount-nebo": ["mount nebo", "جبل نيبو"], "wadi-mujib": ["wadi mujib", "وادي الموجب"],
+  karak: ["karak", "الكرك"], dana: ["dana", "ضانا"], azraq: ["azraq", "الأزرق", "الازرق"],
+  shobak: ["shobak", "الشوبك"], ajloun: ["ajloun", "عجلون"], "umm-qais": ["umm qais", "ام قيس", "أم قيس"],
+  "iraq-al-amir": ["iraq al-amir", "iraq al amir", "عراق الأمير", "عراق الامير"], "as-salt": ["as-salt", "salt", "السلط"],
+  "umm-al-jimal": ["umm al-jimal", "umm al jimal", "أم الجمال", "ام الجمال"], pella: ["pella", "بيلا", "طبقة فحل"],
+  "main-hot-springs": ["ma'in", "main hot springs", "حمامات ماعين", "ماعين"]
+};
+
+const ARABIC_DESTINATION_GUIDE = {
+  petra: { name: "البتراء", description: "مدينة نبطية منحوتة في الصخر الوردي، ازدهرت كمحطة مهمة على طرق التجارة القديمة وطوّر أهلها نظامًا متقدمًا لجمع المياه.", highlights: ["المشي في السيق وظهور الخزنة في نهايته", "الواجهات والمقابر والمسارات التي تمتد أبعد من الخزنة", "الدير ونقاط المشاهدة وألوان الصخر وقت الغروب"], tip: "ابدأ باكرًا، ارتدِ حذاءً مريحًا، واحمل الماء واترك وقتًا يتجاوز زيارة الخزنة فقط." },
+  "wadi-rum": { name: "وادي رم", description: "صحراء واسعة من الجبال الرملية والأقواس الطبيعية والنقوش القديمة، ترتبط بتراث بدوي حي وتجربة سماء ليلية استثنائية.", highlights: ["جولات الصحراء بين التكوينات الصخرية", "الضيافة البدوية والشاي حول النار", "الغروب ومراقبة النجوم"], tip: "الإقامة ليلة واحدة تكشف جمال الوادي عند الغروب والفجر، وتأكد من اختيار مشغّل محلي موثوق." },
+  "dead-sea": { name: "البحر الميت", description: "أخفض نقطة مكشوفة على سطح الأرض وبحيرة شديدة الملوحة تشتهر بالطفو والمشهد الجيولوجي الفريد.", highlights: ["تجربة الطفو بسهولة", "تكوينات الملح وإطلالات الأغوار", "الاسترخاء بين أيام الرحلة النشطة"], tip: "احمِ عينيك وتجنب الماء بعد الحلاقة أو عند وجود جروح، ثم اغتسل بماء عذب." },
+  jerash: { name: "جرش", description: "واحدة من أفضل المدن الرومانية المحفوظة، وتضم الساحة البيضاوية وشارع الأعمدة والمسارح والمعابد وطبقات تاريخية لاحقة.", highlights: ["الساحة البيضاوية المميزة", "شارع الأعمدة والمسارح ذات الصوتيات الرائعة", "بوابة هادريان والمعابد والكنائس"], tip: "خصص ساعتين على الأقل وزرها صباحًا أو آخر النهار لتجنب الحر والاستمتاع بالإضاءة." },
+  aqaba: { name: "العقبة", description: "مدينة الأردن الساحلية على البحر الأحمر، تجمع الشعاب المرجانية والمياه الدافئة والأجواء المسائية الهادئة.", highlights: ["الغوص والسنوركل قرب الشعاب", "الشاطئ والممشى والأجواء الدافئة", "سهولة دمجها مع وادي رم"], tip: "اختر نشاطًا يحافظ على الشعاب ولا تلمس المرجان، وتحقق من حالة البحر قبل النشاط." },
+  amman: { name: "عمّان", description: "عاصمة مبنية على التلال تجمع آثار القلعة والمدرج الروماني وأسواق وسط البلد مع أحياء فنية ومقاهٍ وثقافة معاصرة.", highlights: ["إطلالة القلعة على تلال المدينة", "طعام وأسواق وسط البلد", "أحياء اللويبدة وجبل عمّان الإبداعية"], tip: "رتب يومك حسب الأحياء لأن المدينة جبلية والمسافات القصيرة قد تستغرق وقتًا." },
+  madaba: { name: "مادبا", description: "مدينة معروفة بفسيفسائها البيزنطية، وأشهرها خريطة الأراضي المقدسة، مع شوارع قديمة ومجتمع محلي متنوع.", highlights: ["خريطة مادبا الفسيفسائية", "الكنائس والمواقع الأثرية", "الأسواق والمطاعم المحلية"], tip: "ادمجها مع جبل نيبو في نصف يوم، وتحقق من مواعيد دخول الكنائس." },
+  "mount-nebo": { name: "جبل نيبو", description: "قمة تاريخية ودينية تطل على وادي الأردن وتضم بقايا كنيسة وفسيفساء جميلة.", highlights: ["الإطلالة الواسعة على الأغوار", "الفسيفساء والبقايا الدينية", "قربه من مادبا"], tip: "الرؤية تعتمد على الطقس؛ زره في يوم صافٍ وادمجه مع مادبا." },
+  "wadi-mujib": { name: "وادي الموجب", description: "وادي عميق قرب البحر الميت يشتهر بمسارات مائية موسمية بين جدران صخرية شاهقة.", highlights: ["المشي المائي داخل السيق", "المنحدرات والمناظر الدرامية", "مغامرة قريبة من البحر الميت"], tip: "فتح المسارات وشروط العمر تعتمد على الموسم والطقس؛ تحقق من المحمية قبل الذهاب." },
+  karak: { name: "قلعة الكرك", description: "حصن ضخم على هضبة مرتفعة، يضم ممرات حجرية وقاعات مقببة ويروي تاريخًا معقدًا من العصور الوسطى.", highlights: ["الممرات والقاعات تحت الأرض", "الإطلالات من أسوار القلعة", "قصة طرق التجارة والصراعات التاريخية"], tip: "ارتدِ حذاءً ثابتًا وخذ ضوء الهاتف لبعض الممرات المعتمة." },
+  dana: { name: "محمية ضانا", description: "منطقة طبيعية تنحدر من مرتفعات القرية نحو وادي عربة وتمر بعدة أنظمة بيئية ومسارات طويلة.", highlights: ["إطلالة قرية ضانا التاريخية", "المشي بين أودية وأنظمة بيئية متنوعة", "الإقامات المجتمعية والمرشدون المحليون"], tip: "بعض المسارات تحتاج دليلًا وتتغير حالتها، لذلك اتفق مع جهة محلية قبل الانطلاق." },
+  azraq: { name: "محمية الأزرق المائية", description: "واحة رطبة وسط الصحراء الشرقية وموطن مهم للطيور المهاجرة قرب أراضٍ بازلتية سوداء.", highlights: ["مراقبة الطيور والممرات الخشبية", "التباين بين الماء والصحراء", "إمكانية دمجها مع قصور الصحراء"], tip: "أوقات مشاهدة الطيور تختلف حسب الموسم؛ اسأل المحمية عن أفضل وقت للزيارة." },
+  shobak: { name: "قلعة الشوبك", description: "قلعة جبلية منفردة جنوب الأردن، تحيط بها مناظر واسعة وتضم نقوشًا وممرات وقصة من العصور الوسطى.", highlights: ["الموقع الدرامي فوق التل", "الأبراج والممرات التاريخية", "هدوء المكان وقلة الازدحام"], tip: "ادمجها مع الطريق إلى البتراء، وانتبه للدرج والحجارة غير المستوية." },
+  ajloun: { name: "قلعة عجلون", description: "قلعة أيوبيّة استراتيجية بين تلال خضراء وغابات وقرى زيتون في شمال الأردن.", highlights: ["تفاصيل العمارة الدفاعية", "إطلالات الغابات والقرى", "مسارات عجلون والطبيعة القريبة"], tip: "ادمج القلعة مع مشي قصير في الغابة أو مع جرش ضمن يوم شمالي متوازن." },
+  "umm-qais": { name: "أم قيس", description: "موقع أثري من الحجر البازلتي يطل على وادي الأردن وبحيرة طبريا ويجمع آثارًا رومانية وقرية عثمانية.", highlights: ["المسرح والشوارع البازلتية", "الإطلالة الواسعة من شمال الأردن", "القرية العثمانية والمتحف"], tip: "المنظر أجمل في يوم صافٍ، ويمكن دمجها مع طبقة فحل أو ريف إربد." },
+  "iraq-al-amir": { name: "عراق الأمير", description: "وادي أخضر قريب من عمّان يضم قصر العبد والكهوف التاريخية وتجارب حرف تديرها سيدات المجتمع المحلي.", highlights: ["قصر العبد الحجري", "الكهوف والوادي الأخضر", "الحرف والمنتجات المجتمعية"], tip: "تواصل مسبقًا مع الجمعية المحلية إذا أردت ورشة أو وجبة مجتمعية." },
+  "as-salt": { name: "السلط", description: "مدينة جبلية ببيوت حجرية صفراء وشوارع وسلالم تراثية تعكس التعايش والحياة الحضرية الأردنية.", highlights: ["مسار الوئام وبيوت التراث", "الأسواق والسلالم بين الأحياء", "الطعام والضيافة المحلية"], tip: "ارتدِ حذاءً مريحًا لأن المسار كثير الصعود والنزول." },
+  "umm-al-jimal": { name: "أم الجمال", description: "مدينة أثرية واسعة مبنية من البازلت الأسود في الصحراء الشمالية، وتضم بيوتًا وكنائس وأنظمة مياه قديمة.", highlights: ["العمارة البازلتية السوداء", "المنازل والكنائس الواسعة", "قصة التكيف مع بيئة الصحراء"], tip: "الموقع مكشوف للشمس والرياح؛ احمل الماء والحماية المناسبة." },
+  pella: { name: "طبقة فحل", description: "موقع أثري هادئ في وادي الأردن يكشف طبقات استيطان تمتد آلاف السنين وسط مشهد زراعي أخضر.", highlights: ["تعدد الطبقات التاريخية", "الهدوء وقلة الزوار", "إطلالات وادي الأردن"], tip: "المعلومات الميدانية قد تكون محدودة؛ وجود دليل يضيف معنى كبيرًا للزيارة." },
+  "main-hot-springs": { name: "حمامات ماعين", description: "ينابيع وشلالات معدنية دافئة تنزل داخل وادٍ بركاني عميق قرب البحر الميت.", highlights: ["الشلالات الدافئة", "المشهد الصخري داخل الوادي", "الاسترخاء بعد أيام المشي"], tip: "تحقق من الوصول والخدمات ودرجة الحرارة الحالية قبل الزيارة، خصوصًا للأطفال." }
+};
+
+function destinationsInQuestion(question) {
+  const q = question.toLowerCase();
+  return destinations.filter(item => (DESTINATION_ALIASES[item.id] || [item.name.toLowerCase()]).some(alias => q.includes(alias)));
+}
+
+function detailedDestinationAnswer(item, arabic) {
+  const content = destinationContent(item);
+  if (arabic) {
+    const guide = ARABIC_DESTINATION_GUIDE[item.id];
+    const duration = ({ "1–2 days": "يوم إلى يومين", "1–3 days": "يوم إلى ثلاثة أيام", "Half day": "نصف يوم", "2–3 hours": "ساعتان إلى ثلاث ساعات" })[item.duration] || item.duration;
+    return `ما هي ${guide.name}؟\n${guide.description}\n\nلماذا تستحق الزيارة؟\n• ${guide.highlights.join("\n• ")}\n\nكيف تخطط للزيارة؟\nالمدة المقترحة: ${duration}. ${guide.tip}\n\nيمكنك دمجها مع الأماكن القريبة الظاهرة في الخريطة ومخطط الرحلة. تأكد قبل الزيارة من المواعيد والأسعار وحالة الطقس أو المسارات لأنها معلومات متغيرة.`;
+  }
+  return `What is ${item.name}?\n${item.description} ${content.story}\n\nWhy it is worth visiting\n• ${content.love.join("\n• ")}\n\nHow to plan it\nSuggested time: ${item.duration}, in ${item.region}. ${content.tip}\n\nYou can combine it with nearby places shown on the map and in the Trip Planner. Verify current hours, prices, weather, and trail or access conditions before visiting.`;
+}
+
 function localConciergeAnswer(question) {
   const q = question.toLowerCase();
-  if (/hidden|quiet|unknown|local|gem/.test(q)) return "For a quieter Jordan story, pair Dana’s village trails with Shobak Castle, Iraq Al-Amir, or Umm al-Jimal. Tell me your number of days and favorite activity, and I’ll narrow it down.";
-  if (/petra.*wadi|wadi.*petra|compare/.test(q)) return "Petra is the stronger history-and-architecture experience; Wadi Rum is about desert scale, Bedouin culture, and outdoor adventure. With two days, keep one full day for each rather than rushing both.";
-  if (/family|children|kids/.test(q)) return "A family-friendly mix could include Amman, Jerash, Madaba, the Dead Sea, and Aqaba. Check age, swimming, trail, and weather requirements directly with each venue or operator before visiting.";
-  if (/budget|cheap|cost|price/.test(q)) return "For a lighter budget, group nearby places: Amman + Iraq Al-Amir + As-Salt, or Madaba + Mount Nebo + the Dead Sea. I won’t invent current prices, so verify transport and entry costs before booking.";
-  if (/water|swim|sea|div/.test(q)) return "Choose Aqaba for reefs and Red Sea activities, the Dead Sea for floating and wellness, and Wadi Mujib for seasonal canyon adventure. Access can change, so confirm conditions before travel.";
-  if (/food|eat|restaurant/.test(q)) return "Start with an Amman food walk for falafel, hummus, mansaf, coffee, and knafeh, then look for community-led meals around As-Salt or villages near Dana. Ask me to add food stops to a route.";
-  const matches = destinations.filter(item => q.includes(item.name.toLowerCase()) || q.includes(item.region.toLowerCase())).slice(0, 3);
-  if (matches.length) return matches.map(item => `${item.name}: ${item.description}`).join("\n\n") + "\n\nVerify current access and opening details before visiting.";
-  return "I can compare destinations, match you with a hidden gem, or shape a route by days, interests, pace, and budget. Try: “I have 5 days and love nature and history.”";
+  const arabic = /[\u0600-\u06ff]/.test(question);
+  let matches = destinationsInQuestion(question);
+  const followUp = /there|near|nearby|around it|what else|itinerary with it|هناك|قريب|قريبة|حولها|منها|معها|فيها/.test(q);
+  if (!matches.length && followUp) {
+    const recentContext = state.aiMessages.slice(0, -1).slice(-5).map(entry => entry.text).join(" ");
+    matches = destinationsInQuestion(recentContext).slice(-1);
+  }
+  if (matches.length === 1 && /near|nearby|around|قريب|قريبة|حولها|معها/.test(q)) {
+    const base = matches[0];
+    const nearby = destinations.filter(item => item.id !== base.id).map(item => ({ ...item, proximity: Math.hypot(item.lat - base.lat, item.lng - base.lng) })).sort((a, b) => a.proximity - b.proximity).slice(0, 3);
+    return arabic ? `أماكن قريبة من ${ARABIC_DESTINATION_GUIDE[base.id].name}:\n• ${nearby.map(item => `${ARABIC_DESTINATION_GUIDE[item.id].name}: ${ARABIC_DESTINATION_GUIDE[item.id].description}`).join("\n• ")}\n\nأقدر أرتبهم لك في يوم واحد أو أكثر إذا أخبرتني بوسيلة التنقل والوقت المتاح.` : `Places near ${base.name}:\n• ${nearby.map(item => `${item.name}: ${item.description}`).join("\n• ")}\n\nTell me your available time and transport, and I can arrange them into a practical route.`;
+  }
+  if (matches.length === 1) return detailedDestinationAnswer(matches[0], arabic);
+  if (matches.length > 1 || /compare|versus| vs |قارن|الفرق|ولا/.test(q)) {
+    const choices = matches.length > 1 ? matches.slice(0, 3) : [findDestination("petra"), findDestination("wadi-rum")];
+    const comparison = choices.map(item => `${item.name}: ${item.category}, ${item.duration}. ${item.description}`).join("\n\n");
+    return arabic ? `مقارنة سريعة حسب التجربة والوقت:\n\n${comparison}\n\nاختيارك الأفضل يعتمد على عدد الأيام واهتماماتك. احكيلي كم يوم معك وشو بتحب، وببني لك الاختيار الأنسب.` : `A quick comparison by experience and time:\n\n${comparison}\n\nThe best choice depends on your available days and interests. Tell me both, and I’ll make a more precise recommendation.`;
+  }
+  if (/hidden|quiet|unknown|local|gem|مخفي|هادئ|غير معروف|محلي/.test(q)) return arabic ? "إذا بدك أماكن أهدأ وأقل شهرة، جرّب قرية ومسارات ضانا، قلعة الشوبك، عراق الأمير، أم الجمال، طبقة فحل أو أزرق. ضانا مناسبة للطبيعة والمشي، أم الجمال للتاريخ البازلتي، وعراق الأمير للحِرف والوادي الأخضر. احكيلي عدد الأيام ونوع التجربة اللي بتحبها عشان أحدد لك أفضل خيار." : "For a quieter Jordan story, consider Dana’s village trails, Shobak Castle, Iraq Al-Amir, Umm al-Jimal, Pella, or Azraq. Dana suits hiking and ecology, Umm al-Jimal offers basalt history, and Iraq Al-Amir blends craft and a green valley. Tell me your days and interests and I’ll narrow it down.";
+  if (/family|children|kids|عائلة|اطفال|أطفال/.test(q)) return arabic ? "لرحلة عائلية متوازنة، اجمع عمّان وجرش ومادبا والبحر الميت والعقبة. خفف عدد المحطات اليومية، واترك وقتًا للراحة، واختر أنشطة تناسب أعمار الأطفال. شروط السباحة والمسارات والطقس تتغير، لذلك راجع الجهة أو المشغّل قبل الزيارة." : "A balanced family route can combine Amman, Jerash, Madaba, the Dead Sea, and Aqaba. Keep daily stops light, leave rest time, and match activities to the children’s ages. Swimming, trail, and weather requirements change, so confirm them with the venue or operator.";
+  if (/budget|cheap|cost|price|ميزانية|رخيص|سعر|تكلفة/.test(q)) return arabic ? "لتقليل التكلفة، اجمع الأماكن القريبة في يوم واحد: عمّان + عراق الأمير + السلط، أو مادبا + جبل نيبو + البحر الميت. استخدم مخطط الرحلة لتقليل الرجوع على نفس الطريق. الأسعار والمواصلات معلومات متغيرة، لذلك لازم تتأكد منها قبل الحجز." : "For a lighter budget, group nearby places into one day: Amman + Iraq Al-Amir + As-Salt, or Madaba + Mount Nebo + the Dead Sea. Use the Trip Planner to reduce backtracking. Prices and transport costs change, so verify them before booking.";
+  if (/water|swim|sea|div|سباحة|بحر|غوص|ماء/.test(q)) return arabic ? "العقبة هي الأفضل للشعاب المرجانية والغوص والبحر الأحمر، والبحر الميت للطفو والاسترخاء، ووادي الموجب لمغامرة مائية موسمية داخل الوادي. لا تلمس المرجان، وتأكد من حالة البحر وفتح المسارات وشروط العمر قبل الانطلاق." : "Choose Aqaba for reefs and Red Sea diving, the Dead Sea for floating and wellness, and Wadi Mujib for a seasonal water-canyon adventure. Never touch coral, and confirm sea conditions, trail openings, and age requirements before you go.";
+  if (/food|eat|restaurant|اكل|أكل|مطعم|منسف|كنافة/.test(q)) return arabic ? "ابدأ من وسط عمّان لتجربة الفلافل والحمص والمناقيش والقهوة والكنافة، وجرّب المنسف كطبق أردني أساسي. السلط وقرى ضانا مناسبة لتجارب أكل محلية أهدأ. إذا أعطيتني مسار رحلتك، أرتّب لك محطات الطعام بدون ما تزيد عليك الطريق." : "Start in downtown Amman for falafel, hummus, manakish, coffee, and knafeh, and try mansaf as Jordan’s signature communal dish. As-Salt and villages around Dana offer quieter local-food experiences. Share your route and I can place food stops without adding unnecessary driving.";
+  if (/history|story|culture|tradition|تاريخ|قصة|ثقافة|عادات/.test(q)) return arabic ? "الأردن يجمع طبقات نبطية ورومانية وبيزنطية وإسلامية وحديثة. البتراء تروي قصة الأنباط والتجارة والماء، جرش تكشف تخطيط المدينة الرومانية، وقلاع الكرك والشوبك وعجلون تشرح صراعات وطرق العصور الوسطى. أما عمّان والسلط ومادبا فتقدم ثقافة حيّة، أسواقًا، طعامًا وفسيفساء. اسألني عن أي مكان منها لأعطيك قصته بالتفصيل." : "Jordan layers Nabataean, Roman, Byzantine, Islamic, and modern stories. Petra reveals Nabataean trade and water engineering; Jerash shows Roman city life; Karak, Shobak, and Ajloun explain medieval routes and power. Amman, As-Salt, and Madaba add living culture, markets, food, and mosaics. Name any place and I’ll tell its story in detail.";
+  if (/transport|drive|car|bus|move|مواصلات|سيارة|باص|تنقل/.test(q)) return arabic ? "للمرونة، السيارة أو السائق الخاص أسهل خصوصًا بين المواقع الطبيعية والجنوبية. داخل عمّان استخدم سيارات الأجرة أو التطبيقات المتاحة، وبين بعض المدن توجد حافلات لكن الجداول قد لا تناسب كل مسار سياحي. خطط رحلتك من الشمال للجنوب أو بالعكس لتقليل الرجوع، وتأكد من المواعيد الحالية قبل السفر." : "A car or private driver offers the most flexibility, especially for natural sites and southern Jordan. In Amman, taxis and available ride apps are practical; buses connect some cities but may not fit every sightseeing route. Plan north-to-south or the reverse to reduce backtracking, and verify current schedules before travel.";
+  if (/weather|season|when|طقس|جو|موسم|متى/.test(q)) return arabic ? "الربيع والخريف غالبًا مريحان للرحلات المتنوعة، بينما يختلف الجو كثيرًا بين مرتفعات عمّان وجرش، صحراء وادي رم، والعقبة والبحر الميت. الشتاء قد يكون باردًا وممطرًا في المرتفعات، والصيف شديد الحرارة في بعض المناطق. افحص توقعات الطقس الرسمية قبل كل يوم لأن الظروف تتغير." : "Spring and autumn are often comfortable for mixed itineraries, but conditions differ greatly between Amman’s highlands, Wadi Rum’s desert, and Aqaba or the Dead Sea. Highlands can be cold and wet in winter, while some areas are very hot in summer. Check an official forecast for each stop before travel.";
+  if (/safe|safety|visa|entry|permit|امن|أمان|فيزا|تأشيرة|دخول/.test(q)) return arabic ? "قواعد الدخول والتأشيرات والتنبيهات الأمنية قد تتغير حسب الجنسية والوقت. استخدم موقع وزارة الداخلية أو هيئة تنشيط السياحة الأردنية، وتحقق من إرشادات سفارة بلدك قبل السفر. أقدر أساعدك في تخطيط الأماكن والمسار، لكن ما رح أخمّن معلومة قانونية أو أمنية متغيرة." : "Entry rules, visas, permits, and safety guidance can change by nationality and date. Check Jordan’s official authorities and your government’s travel advice before departure. I can help plan destinations and routes, but I won’t guess changing legal or safety information.";
+  if (/day|days|route|plan|itinerary|يوم|ايام|أيام|مسار|خطة|برنامج/.test(q)) return arabic ? "أقدر أبني لك مسار كامل، بس أعطيني: عدد الأيام، نقطة الوصول، اهتماماتك، سرعة الرحلة، وهل معك سيارة. مثال: «عندي 5 أيام، بوصل عمّان، وبحب التاريخ والطبيعة». بعدها أرتب المحطات جغرافيًا وأضيف جوهرة مخفية بدون رجوع غير ضروري." : "I can build the full route. Tell me your number of days, arrival point, interests, preferred pace, and whether you have a car. For example: “I have 5 days, arrive in Amman, and love history and nature.” I’ll order the stops geographically and include a hidden gem without unnecessary backtracking.";
+  return arabic ? "أنا دليلك السياحي للأردن. أقدر أجاوبك بالتفصيل عن قصص وتاريخ الأماكن، الأنشطة، الطعام والثقافة، المقارنات، المواصلات، وأبني مسار حسب أيامك واهتماماتك. اكتب سؤالك باسم المكان أو نوع التجربة—مثلاً: «شو قصة جرش؟» أو «وين أروح إذا بحب الطبيعة؟». للأسعار والطقس والمواعيد والفيزا رح أوضح لك دائمًا إنها تحتاج تحقق حديث." : "I’m your Jordan travel concierge. I can explain destination stories and history, activities, food and culture, compare places, discuss transport, or build a route around your days and interests. Ask with a place or travel goal—for example, “Tell me the story of Jerash” or “Where should I go for nature?” For prices, weather, hours, visas, and access, I’ll clearly flag what needs a current official check.";
 }
 
 async function askAiConcierge(message) {
   state.aiMessages.push({ role: "user", text: message });
   state.aiBusy = true;
-  render();
+  render({ preserveScroll: true, chatToBottom: true });
   try {
-    const prompt = `Traveler question: ${message}\nAnswer in the traveler’s language, in under 140 words. Use only this Beyond Jordan catalog:\n${destinationCatalog()}\nGive practical route-aware advice and say when time-sensitive details need verification.`;
+    const conversation = state.aiMessages.slice(-7).map(entry => `${entry.role === "assistant" ? "Concierge" : "Traveler"}: ${entry.text}`).join("\n");
+    const prompt = `Continue this Jordan travel conversation:\n${conversation}\n\nAnswer the latest question in the traveler’s language. Give a complete, engaging answer, normally 220–450 words when the question asks for a story or explanation. Use clear short sections or bullets when helpful. Explain what the place or topic is, its story or significance, what a visitor can experience, practical planning context, and relevant nearby suggestions. For simple questions, stay concise. Do not invent current prices, hours, weather, access, visa, permit, transport schedule, or safety claims; explicitly recommend an official current check when those details matter.\n\nBeyond Jordan destination knowledge:\n${destinationCatalog()}`;
     const answer = await runGemini(prompt);
     state.aiMessages.push({ role: "assistant", text: answer, source: "gemini" });
   } catch (error) {
@@ -561,11 +634,7 @@ async function askAiConcierge(message) {
     state.aiMessages.push({ role: "assistant", text: localConciergeAnswer(message), source: "smart" });
   }
   state.aiBusy = false;
-  render();
-  requestAnimationFrame(() => {
-    const log = document.querySelector("#ai-chat-log");
-    if (log) log.scrollTop = log.scrollHeight;
-  });
+  render({ preserveScroll: true, chatToBottom: true, focusChat: true });
 }
 
 function aiPlanResult() {
@@ -577,7 +646,7 @@ function aiPlanResult() {
 
 function aiGuidePage() {
   const messages = state.aiMessages.map(message => `<div class="ai-message ${message.role}"><span>${message.role === "assistant" ? "✦" : "You"}</span><p>${escapeHtml(message.text).replace(/\n/g, "<br>")}</p></div>`).join("");
-  return `${nav("ai-guide")}<main id="main" class="ai-page"><section class="ai-hero"><div class="container"><div><span class="ai-kicker">BEYOND JORDAN INTELLIGENCE</span><h1>Your trip, shaped around <em>you.</em></h1><p>Build a thoughtful Jordan route in seconds, discover the hidden place that matches your travel style, or ask a real travel question.</p><div class="ai-trust"><span>✦ Route-aware</span><span>⌖ Jordan-focused</span><span>◌ Easy to adjust</span></div></div><div class="ai-hero-orbit"><span>AI</span><small>Jordan<br>Concierge</small></div></div></section><section class="section ai-workspace-section"><div class="container ai-workspace"><form class="ai-planner-card" data-form="ai-plan"><div class="ai-card-title"><span class="ai-orb">✦</span><div><span class="eyebrow">AI Trip Maker</span><h2>Tell us your travel style</h2></div></div><div class="form-grid"><div class="field"><label for="ai-days">How many days?</label><select id="ai-days" name="days">${[3,5,7,10,14].map(day => `<option value="${day}" ${day === 7 ? "selected" : ""}>${day} days</option>`).join("")}</select></div><div class="field"><label for="ai-start">Start near</label><select id="ai-start" name="start"><option value="amman">Amman / North</option><option value="aqaba">Aqaba / South</option></select></div><div class="field"><label for="ai-pace">Travel pace</label><select id="ai-pace" name="pace"><option value="relaxed">Relaxed</option><option value="balanced" selected>Balanced</option><option value="adventurous">Adventurous</option></select></div><div class="field"><label for="ai-budget">Travel style</label><select id="ai-budget" name="budget"><option value="budget">Budget-aware</option><option value="comfort" selected>Comfort</option><option value="premium">Premium</option></select></div></div><fieldset class="ai-interests"><legend>What pulls you to Jordan?</legend>${AI_INTERESTS.map((interest, index) => `<label><input type="checkbox" name="interests" value="${interest}" ${index < 2 ? "checked" : ""}><span>${interest}</span></label>`).join("")}</fieldset><button class="btn ai-generate" type="submit" ${state.aiBusy ? "disabled" : ""}>${state.aiBusy ? "<span class='mini-spinner'></span> Shaping your journey…" : "✦ Build my AI journey"}</button><p class="ai-fine-print">No invented prices or live access claims. Always verify time-sensitive details.</p></form><section class="ai-chat-card"><div class="ai-chat-head"><div><span class="status-dot"></span><div><strong>Jordan AI Concierge</strong><small>${state.aiOnline ? "Gemini connected" : "Smart travel mode"}</small></div></div><span class="ai-badge">BETA</span></div><div class="ai-quick-prompts">${["Find my hidden gem", "Petra or Wadi Rum?", "Plan a family route"].map(prompt => `<button type="button" data-ai-prompt="${prompt}">${prompt}</button>`).join("")}</div><div class="ai-chat-log" id="ai-chat-log">${messages}${state.aiBusy ? `<div class="ai-message assistant"><span>✦</span><p><i class="typing-dot"></i><i class="typing-dot"></i><i class="typing-dot"></i></p></div>` : ""}</div><form class="ai-chat-input" data-form="ai-chat"><input name="message" maxlength="400" required placeholder="Ask about routes, places, or experiences…" aria-label="Ask the Jordan AI concierge"><button type="submit" aria-label="Send" ${state.aiBusy ? "disabled" : ""}>↑</button></form></section></div>${aiPlanResult()}</section></main>${footer()}`;
+  return `${nav("ai-guide")}<main id="main" class="ai-page"><section class="ai-hero"><div class="container"><div><span class="ai-kicker">BEYOND JORDAN INTELLIGENCE</span><h1>Your trip, shaped around <em>you.</em></h1><p>Build a thoughtful Jordan route in seconds, discover the hidden place that matches your travel style, or ask a real travel question.</p><div class="ai-trust"><span>✦ Route-aware</span><span>⌖ Jordan-focused</span><span>◌ Easy to adjust</span></div></div><div class="ai-hero-orbit"><span>AI</span><small>Jordan<br>Concierge</small></div></div></section><section class="section ai-workspace-section"><div class="container ai-workspace"><form class="ai-planner-card" data-form="ai-plan"><div class="ai-card-title"><span class="ai-orb">✦</span><div><span class="eyebrow">AI Trip Maker</span><h2>Tell us your travel style</h2></div></div><div class="form-grid"><div class="field"><label for="ai-days">How many days?</label><select id="ai-days" name="days">${[3,5,7,10,14].map(day => `<option value="${day}" ${day === 7 ? "selected" : ""}>${day} days</option>`).join("")}</select></div><div class="field"><label for="ai-start">Start near</label><select id="ai-start" name="start"><option value="amman">Amman / North</option><option value="aqaba">Aqaba / South</option></select></div><div class="field"><label for="ai-pace">Travel pace</label><select id="ai-pace" name="pace"><option value="relaxed">Relaxed</option><option value="balanced" selected>Balanced</option><option value="adventurous">Adventurous</option></select></div><div class="field"><label for="ai-budget">Travel style</label><select id="ai-budget" name="budget"><option value="budget">Budget-aware</option><option value="comfort" selected>Comfort</option><option value="premium">Premium</option></select></div></div><fieldset class="ai-interests"><legend>What pulls you to Jordan?</legend>${AI_INTERESTS.map((interest, index) => `<label><input type="checkbox" name="interests" value="${interest}" ${index < 2 ? "checked" : ""}><span>${interest}</span></label>`).join("")}</fieldset><button class="btn ai-generate" type="submit" ${state.aiBusy ? "disabled" : ""}>${state.aiBusy ? "<span class='mini-spinner'></span> Shaping your journey…" : "✦ Build my AI journey"}</button><p class="ai-fine-print">No invented prices or live access claims. Always verify time-sensitive details.</p></form><section class="ai-chat-card"><div class="ai-chat-head"><div><span class="status-dot"></span><div><strong>Jordan AI Concierge</strong><small>${state.aiOnline ? "Gemini connected" : "Smart travel mode · Arabic & English"}</small></div></div><span class="ai-badge">BETA</span></div><div class="ai-quick-prompts">${["Tell me Petra’s story", "Find my hidden gem", "Petra or Wadi Rum?", "Plan a family route"].map(prompt => `<button type="button" data-ai-prompt="${prompt}">${prompt}</button>`).join("")}</div><div class="ai-chat-log" id="ai-chat-log">${messages}${state.aiBusy ? `<div class="ai-message assistant"><span>✦</span><p><i class="typing-dot"></i><i class="typing-dot"></i><i class="typing-dot"></i></p></div>` : ""}</div><form class="ai-chat-input" data-form="ai-chat"><input name="message" maxlength="400" required placeholder="Ask anything about traveling in Jordan…" aria-label="Ask the Jordan AI concierge"><button type="submit" aria-label="Send" ${state.aiBusy ? "disabled" : ""}>↑</button></form></section></div>${aiPlanResult()}</section></main>${footer()}`;
 }
 
 function plannerSidebar(active = 1) {
@@ -620,7 +689,8 @@ function notFoundPage() {
   return `${nav("")}<main id="main"><section class="section"><div class="container empty-state"><span class="eyebrow">Lost in Jordan?</span><h1 style="font-size:3.5rem">This path ends here.</h1><p>Let’s return to the map and find another route.</p><a class="btn primary" href="#/home">Back Home</a></div></section></main>${footer()}`;
 }
 
-function render() {
+function render(options = {}) {
+  const previousScrollY = window.scrollY;
   destroyInteractiveMap();
   const current = route();
   const [page, id] = current.split("/");
@@ -645,7 +715,12 @@ function render() {
   else html = (pages[page] || notFoundPage)();
   app.innerHTML = html;
   document.title = `${page === "home" ? "Beyond Jordan" : page.replaceAll("-", " ").replace(/\b\w/g, c => c.toUpperCase())} — Beyond Jordan`;
-  window.scrollTo({ top: 0, behavior: "instant" });
+  window.scrollTo({ top: options.preserveScroll ? previousScrollY : 0, behavior: "instant" });
+  if (options.chatToBottom) requestAnimationFrame(() => {
+    const log = document.querySelector("#ai-chat-log");
+    if (log) log.scrollTop = log.scrollHeight;
+    if (options.focusChat) document.querySelector("[data-form='ai-chat'] input")?.focus({ preventScroll: true });
+  });
   if (page === "map") requestAnimationFrame(() => initInteractiveMap(filteredMapItems()));
 }
 
