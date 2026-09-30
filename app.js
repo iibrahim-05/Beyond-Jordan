@@ -131,17 +131,13 @@ async function initFirebase() {
     try {
       const firebaseAI = await import("https://www.gstatic.com/firebasejs/12.2.1/firebase-ai.js");
       const ai = firebaseAI.getAI(firebase, { backend: new firebaseAI.GoogleAIBackend() });
-      const aiModel = firebaseAI.getGenerativeModel(ai, {
-        model: "gemini-3.5-flash",
-        systemInstruction: `You are Beyond Jordan AI, a warm, natural, knowledgeable travel companion focused on Jordan. Hold a real multi-turn conversation: remember what the traveler already said, understand follow-up questions and pronouns, ask useful clarifying questions, and never repeat a canned template. Answer in the traveler's language. You may discuss any normal Jordan travel topic, including history, stories, destinations, culture, food, activities, routes, comparisons, accessibility, packing, and trip planning. Give useful depth when asked, but keep simple answers concise. Never invent live prices, opening hours, permits, weather, safety conditions, visa rules, availability, or transport schedules; say when an official current check is required.
+      const systemInstruction = `You are Beyond Jordan AI, a capable, warm, natural general assistant inside a Jordan tourism website. Answer whatever ordinary question the user asks, not only travel questions, and keep a real multi-turn conversation: remember what the user already said, understand follow-ups and pronouns, ask useful clarifying questions, and never repeat a canned template. Answer in the user's language. Your strongest specialty is Jordan: history, stories, destinations, culture, food, activities, routes, comparisons, accessibility, packing, and trip planning. Give useful depth when asked, but keep simple answers concise. Never invent live prices, opening hours, permits, weather, safety conditions, visa rules, availability, or transport schedules; clearly say when a current official check is required.
 
 Verified Beyond Jordan destination knowledge:
-${destinationCatalog()}`
-      });
-      state.firebase.aiModel = aiModel;
-      state.firebase.aiChat = aiModel.startChat({
-        generationConfig: { maxOutputTokens: 1200, temperature: 0.75, topP: 0.9 }
-      });
+${destinationCatalog()}`;
+      const modelNames = ["gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-3.8-flash"];
+      state.firebase.aiModels = modelNames.map(model => firebaseAI.getGenerativeModel(ai, { model, systemInstruction }));
+      state.firebase.aiModel = state.firebase.aiModels[0];
     } catch (aiError) {
       state.aiError = aiError?.message || "Firebase AI Logic is not available";
       console.info("Firebase AI Logic is not enabled yet; the local smart concierge remains available.");
@@ -497,23 +493,56 @@ function buildSmartPlan(preferences) {
 }
 
 async function runGemini(prompt) {
-  const model = state.firebase?.aiModel;
-  if (!model) throw new Error("Firebase AI Logic is not available");
-  const result = await model.generateContent(prompt);
-  const text = result.response.text();
-  state.aiOnline = true;
-  return text;
+  const models = state.firebase?.aiModels || (state.firebase?.aiModel ? [state.firebase.aiModel] : []);
+  if (!models.length) throw new Error("Firebase AI Logic is not available");
+  let lastError;
+  for (const model of models) {
+    try {
+      const result = await withAiTimeout(model.generateContent(prompt));
+      const text = result.response.text();
+      if (!text?.trim()) throw new Error("AI returned an empty answer");
+      state.aiOnline = true;
+      state.aiError = "";
+      return text;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError || new Error("The AI service is temporarily unavailable");
+}
+
+function withAiTimeout(request, timeoutMs = 20000) {
+  return Promise.race([
+    request,
+    new Promise((_, reject) => setTimeout(() => reject(new Error("AI model timed out; trying the next model")), timeoutMs))
+  ]);
 }
 
 async function runGeminiChat(message) {
-  const chat = state.firebase?.aiChat;
-  if (!chat) throw new Error("Firebase AI Logic setup is incomplete");
-  const result = await chat.sendMessage(message);
-  const text = result.response.text();
-  if (!text?.trim()) throw new Error("Gemini returned an empty answer");
-  state.aiOnline = true;
-  state.aiError = "";
-  return text;
+  const models = state.firebase?.aiModels || (state.firebase?.aiModel ? [state.firebase.aiModel] : []);
+  if (!models.length) throw new Error("Firebase AI Logic setup is incomplete");
+  const history = state.aiMessages.slice(1, -1).map(item => ({
+    role: item.role === "assistant" ? "model" : "user",
+    parts: [{ text: item.text }]
+  }));
+  let lastError;
+  for (const model of models) {
+    try {
+      const chat = model.startChat({
+        history,
+        generationConfig: { maxOutputTokens: 1600, temperature: 0.75, topP: 0.9 }
+      });
+      const result = await withAiTimeout(chat.sendMessage(message));
+      const text = result.response.text();
+      if (!text?.trim()) throw new Error("AI returned an empty answer");
+      state.aiOnline = true;
+      state.aiError = "";
+      return text;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError || new Error("The AI service is temporarily unavailable");
 }
 
 function parseAiPlan(text, preferences) {
@@ -666,7 +695,7 @@ function aiPlanResult() {
 
 function aiGuidePage() {
   const messages = state.aiMessages.map(message => `<div class="ai-message ${message.role}"><span>${message.role === "assistant" ? "✦" : "You"}</span><p>${escapeHtml(message.text).replace(/\n/g, "<br>")}</p></div>`).join("");
-  const aiStatus = state.aiOnline ? "Gemini live · conversation memory on" : state.aiError ? "Limited fallback · finish Firebase AI setup" : "Connecting to Gemini…";
+  const aiStatus = state.aiOnline ? "AI live · conversation memory on" : state.aiError ? "Smart backup active · AI will retry automatically" : "Connecting to AI…";
   return `${nav("ai-guide")}<main id="main" class="ai-page"><section class="ai-hero"><div class="container"><div><span class="ai-kicker">BEYOND JORDAN INTELLIGENCE</span><h1>Your trip, shaped around <em>you.</em></h1><p>Build a thoughtful Jordan route in seconds, discover the hidden place that matches your travel style, or ask a real travel question.</p><div class="ai-trust"><span>✦ Route-aware</span><span>⌖ Jordan-focused</span><span>◌ Easy to adjust</span></div></div><div class="ai-hero-orbit"><span>AI</span><small>Jordan<br>Concierge</small></div></div></section><section class="section ai-workspace-section"><div class="container ai-workspace"><form class="ai-planner-card" data-form="ai-plan"><div class="ai-card-title"><span class="ai-orb">✦</span><div><span class="eyebrow">AI Trip Maker</span><h2>Tell us your travel style</h2></div></div><div class="form-grid"><div class="field"><label for="ai-days">How many days?</label><select id="ai-days" name="days">${[3,5,7,10,14].map(day => `<option value="${day}" ${day === 7 ? "selected" : ""}>${day} days</option>`).join("")}</select></div><div class="field"><label for="ai-start">Start near</label><select id="ai-start" name="start"><option value="amman">Amman / North</option><option value="aqaba">Aqaba / South</option></select></div><div class="field"><label for="ai-pace">Travel pace</label><select id="ai-pace" name="pace"><option value="relaxed">Relaxed</option><option value="balanced" selected>Balanced</option><option value="adventurous">Adventurous</option></select></div><div class="field"><label for="ai-budget">Travel style</label><select id="ai-budget" name="budget"><option value="budget">Budget-aware</option><option value="comfort" selected>Comfort</option><option value="premium">Premium</option></select></div></div><fieldset class="ai-interests"><legend>What pulls you to Jordan?</legend>${AI_INTERESTS.map((interest, index) => `<label><input type="checkbox" name="interests" value="${interest}" ${index < 2 ? "checked" : ""}><span>${interest}</span></label>`).join("")}</fieldset><button class="btn ai-generate" type="submit" ${state.aiBusy ? "disabled" : ""}>${state.aiBusy ? "<span class='mini-spinner'></span> Shaping your journey…" : "✦ Build my AI journey"}</button><p class="ai-fine-print">No invented prices or live access claims. Always verify time-sensitive details.</p></form><section class="ai-chat-card"><div class="ai-chat-head"><div><span class="status-dot ${state.aiOnline ? "online" : state.aiError ? "limited" : ""}"></span><div><strong>Jordan AI Concierge</strong><small>${aiStatus}</small></div></div><span class="ai-badge">BETA</span></div><div class="ai-quick-prompts">${["Tell me Petra’s story", "Find my hidden gem", "Petra or Wadi Rum?", "Plan a family route"].map(prompt => `<button type="button" data-ai-prompt="${prompt}">${prompt}</button>`).join("")}</div><div class="ai-chat-log" id="ai-chat-log">${messages}${state.aiBusy ? `<div class="ai-message assistant"><span>✦</span><p><i class="typing-dot"></i><i class="typing-dot"></i><i class="typing-dot"></i></p></div>` : ""}</div><form class="ai-chat-input" data-form="ai-chat"><input name="message" maxlength="600" required placeholder="Chat naturally about anything in your Jordan trip…" aria-label="Ask the Jordan AI concierge"><button type="submit" aria-label="Send" ${state.aiBusy ? "disabled" : ""}>↑</button></form></section></div>${aiPlanResult()}</section></main>${footer()}`;
 }
 
