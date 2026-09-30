@@ -50,3 +50,5 @@ Before production use, finish the Firebase AI Logic guided setup, keep Firebase 
 `Home → Explore → Destination Detail → Add to Trip → Trip Planner → Final Itinerary → Save Trip`
 
 The implementation also includes Hidden Gems, Activities, Search, Map, Favorites, authentication, profile and saved trips, responsive navigation, filters, modal feedback, and RTL support.
+
+Each destination now has an immersive themed detail page. Its visual palette reflects the place, while richer editorial context, a labeled image gallery, practical local notes, nearby suggestions, and a Travel DNA match connect discovery directly to the AI Guide and Trip Planner.

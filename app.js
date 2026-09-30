@@ -38,6 +38,36 @@ const destinations = [
   { id: "main-hot-springs", name: "Ma'in Hot Springs", subtitle: "Mineral waterfalls below the plateau", region: "Madaba", category: "Wellness", rating: "4.6", duration: "Half day", image: IMG.deadSea, hidden: true, distance: "74 km from Amman", lat: 31.6095, lng: 35.6154, description: "Relax beside warm mineral waterfalls tucked into a steep and peaceful volcanic valley." }
 ];
 
+const DESTINATION_THEMES = {
+  petra: ["#a84f3d", "#3d211c", "#f6e7df"], "wadi-rum": ["#ad5c32", "#402219", "#f5e7db"],
+  "dead-sea": ["#4c8792", "#173e47", "#e5f1f2"], jerash: ["#a47a42", "#44331f", "#f3ecdf"],
+  aqaba: ["#167e98", "#073b49", "#e2f3f6"], amman: ["#56645d", "#26312c", "#e9eeeb"],
+  madaba: ["#8f6544", "#3f2e24", "#f1e9e1"], "mount-nebo": ["#7d765c", "#363426", "#eeede5"],
+  "wadi-mujib": ["#547d70", "#213c34", "#e4efeb"], karak: ["#866246", "#39291f", "#efe7df"],
+  dana: ["#547451", "#233722", "#e6eee3"], azraq: ["#367f88", "#143b40", "#e1f0f1"],
+  shobak: ["#9c6848", "#402b20", "#f2e8df"], ajloun: ["#44714d", "#193721", "#e3efe5"],
+  "umm-qais": ["#65705b", "#293126", "#e8ece4"], "iraq-al-amir": ["#557855", "#223a24", "#e5efe5"],
+  "as-salt": ["#b07b3e", "#48331f", "#f5ecdf"], "umm-al-jimal": ["#5b6060", "#262b2b", "#e8eaea"],
+  pella: ["#74804b", "#303820", "#ebefdf"], "main-hot-springs": ["#608579", "#263e38", "#e5efec"]
+};
+
+const DESTINATION_CONTENT = {
+  petra: { title: "The Rose City", story: "Petra rewards travelers who slow down. Beyond the Treasury, trails climb toward carved façades, high places, quiet valleys, and the monumental Monastery. Every layer reveals how the Nabataeans shaped water, trade, and stone into a city that still feels alive.", love: ["The first reveal of the Treasury through the Siq", "Hundreds of carved façades beyond the famous viewpoint", "Sunset colors that transform the sandstone"], tip: "Start early, wear shoes with grip, carry water, and leave time to explore beyond the Treasury." },
+  "wadi-rum": { title: "Silence written in stone", story: "Wadi Rum is not an empty desert. It is a vast cultural landscape of sandstone arches, inscriptions, open valleys, and Bedouin memory. The best visits balance adventure with stillness: a jeep route, a short walk, tea by the fire, and time beneath an exceptionally wide sky.", love: ["Monumental sandstone and granite formations", "Bedouin-hosted camps and desert storytelling", "Stargazing far from city light"], tip: "Stay overnight if you can—the desert changes character at sunset and again before sunrise." },
+  "dead-sea": { title: "The lowest shore on Earth", story: "The Dead Sea is both a geological wonder and a place to pause. Mineral-rich water, sculptural salt edges, and the steep mountains of the Rift Valley create an atmosphere unlike anywhere else in Jordan.", love: ["Effortless floating in mineral-rich water", "Warm light across the Rift Valley", "A restorative pause between active travel days"], tip: "Avoid freshly shaved or irritated skin, protect your eyes, and rinse with fresh water after floating." },
+  jerash: { title: "A city of columns and echoes", story: "Jerash makes Roman urban life unusually easy to imagine. Walk through Hadrian’s Arch, cross the Oval Plaza, follow the Cardo, and listen for the acoustics of its theatres while later churches and homes reveal the city’s many lives.", love: ["The sweeping geometry of the Oval Plaza", "A remarkably complete colonnaded street", "Theatres, temples, gates, and layered history"], tip: "Visit in softer morning or late-afternoon light and allow at least two unhurried hours." },
+  aqaba: { title: "Jordan meets the Red Sea", story: "Aqaba brings a different rhythm to a Jordan journey. Coral gardens sit close to shore, mountains frame the Gulf, and warm evenings invite slow waterfront walks, seafood, and a break from long road days.", love: ["Accessible coral reefs and clear water", "Warm coastal evenings throughout much of the year", "Easy pairing with Wadi Rum"], tip: "Choose reef-responsible operators, never touch coral, and check sea conditions before any water activity." },
+  amman: { title: "Old stories, new energy", story: "Amman unfolds hill by hill. Roman remains look over a dense downtown of markets and bakeries, while nearby neighborhoods add galleries, independent cafés, design studios, and a distinctly contemporary Jordanian voice.", love: ["Citadel views over the city’s pale hills", "Downtown food, markets, and street life", "Creative neighborhoods with local character"], tip: "Plan by neighborhood—the city is hilly, and short distances on a map can take longer than expected." },
+  dana: { title: "Jordan in one dramatic valley", story: "Dana descends through a remarkable sequence of landscapes, from Mediterranean highlands toward the arid Wadi Araba. Village life, biodiversity, and long-distance trails make it one of Jordan’s most rewarding places for travelers who want depth and quiet.", love: ["Big canyon views from the historic village", "Trails crossing several ecosystems", "Community-led stays and local guiding"], tip: "Trail conditions and guide requirements vary, so confirm your route with a local reserve operator." },
+  ajloun: { title: "Forest hills and fortress views", story: "Ajloun offers a greener side of Jordan. Oak and pine hills surround a strategically placed medieval castle, while village landscapes, olive groves, and walking trails make the north feel intimate and refreshing.", love: ["Ayyubid architecture and defensive details", "Forest air and northern hill views", "Village trails and olive landscapes"], tip: "Pair the castle with a forest walk and Jerash for a balanced northern day." }
+};
+
+const DESTINATION_GALLERY = {
+  petra: ["https://images.unsplash.com/photo-1615811648503-479d06197ff3?auto=format&fit=crop&w=1800&q=84"],
+  "dead-sea": ["https://images.unsplash.com/photo-1581614787005-f18873bc0df9?auto=format&fit=crop&w=1800&q=84"],
+  jerash: ["https://images.unsplash.com/photo-1774998626530-4a0b9f51c392?auto=format&fit=crop&w=1800&q=84", "https://images.unsplash.com/photo-1633788409811-c73f537c4afe?auto=format&fit=crop&w=1800&q=84", "https://images.unsplash.com/photo-1709912152395-787679e56451?auto=format&fit=crop&w=1800&q=84"]
+};
+
 const activities = [
   { id: "petra-by-night", name: "Petra by Night", type: "Culture", destination: "Petra", image: IMG.petra, icon: "✦", duration: "Evening", description: "Walk the candlelit Siq and experience the Treasury illuminated under the stars." },
   { id: "wadi-rum-camping", name: "Desert Camping", type: "Adventure", destination: "Wadi Rum", image: IMG.wadiRum, icon: "☾", duration: "Overnight", description: "Share Bedouin hospitality and sleep beneath Wadi Rum’s wide night sky." },
@@ -170,8 +200,45 @@ function favoriteButton(item) {
   return `<button class="favorite-btn ${saved ? "saved" : ""}" data-favorite="${item.id}" aria-label="${saved ? "Remove from" : "Save to"} favorites" title="Save">${saved ? "♥" : "♡"}</button>`;
 }
 
+function destinationTheme(item) {
+  const [accent, dark, soft] = DESTINATION_THEMES[item.id] || ["#bd6644", "#123c2f", "#f5efe4"];
+  return { accent, dark, soft, style: `--place-accent:${accent};--place-dark:${dark};--place-soft:${soft}` };
+}
+
+function destinationContent(item) {
+  return DESTINATION_CONTENT[item.id] || {
+    title: item.subtitle,
+    story: `${item.description} Here, landscape and local memory come together in a quieter chapter of Jordan. Take time to notice the details, meet the place at its own pace, and connect it thoughtfully with the wider region.`,
+    love: [`A distinctive ${item.category.toLowerCase()} experience`, `A strong connection to ${item.region} and its local story`, "An easy way to see a less expected side of Jordan"],
+    tip: `Allow ${item.duration.toLowerCase()} and confirm current access, opening times, and local guidance before you travel.`
+  };
+}
+
+function galleryFor(item) {
+  const nearby = destinations
+    .filter(candidate => candidate.id !== item.id)
+    .map(candidate => ({ ...candidate, distance: Math.hypot(candidate.lat - item.lat, candidate.lng - item.lng) }))
+    .sort((a, b) => a.distance - b.distance);
+  const exact = (DESTINATION_GALLERY[item.id] || []).map((src, index) => ({ src, label: `${item.name} · Detail ${index + 1}` }));
+  const regional = nearby.map(place => ({ src: place.image, label: `Nearby ${place.name}` }));
+  return [{ src: item.image, label: `${item.name} · Signature view` }, ...exact, ...regional]
+    .filter((photo, index, all) => all.findIndex(candidate => candidate.src === photo.src) === index)
+    .slice(0, 4);
+}
+
+function travelMatch(item) {
+  const interests = state.trip.interests || [];
+  const exact = interests.includes(item.category);
+  const related = ({ Water: "Nature", Wellness: "Nature", Culture: "History" })[item.category];
+  const matchedInterest = exact ? item.category : interests.includes(related) ? related : interests[0];
+  return matchedInterest
+    ? `${item.name} ${exact ? "strongly matches" : "adds contrast to"} your ${matchedInterest} travel style. ${item.duration} fits naturally into a ${state.trip.days}-day Jordan journey.`
+    : `${item.name} is a strong choice for travelers drawn to ${item.category.toLowerCase()}, local context, and a well-paced Jordan journey.`;
+}
+
 function destinationCard(item, gem = false) {
-  return `<article class="${gem ? "gem-card" : "destination-card"}">
+  const theme = destinationTheme(item);
+  return `<article class="${gem ? "gem-card" : "destination-card"}" style="${theme.style}">
     <div class="card-image"><a href="#/destination/${item.id}" aria-label="View ${item.name}"><img src="${item.image}" alt="${item.name}, Jordan" loading="lazy"></a>${favoriteButton(item)}</div>
     <div class="card-body">${gem ? `<span class="eyebrow">Hidden Gem</span>` : ""}<div class="card-title-row"><h3><a href="#/destination/${item.id}">${item.name}</a></h3><span class="rating">★ ${item.rating}</span></div><p>${item.subtitle}</p>${gem ? `<div class="divider"></div><div class="meta"><span>⌖ ${item.distance}</span><span>${item.region}</span></div>` : ""}</div>
   </article>`;
@@ -213,8 +280,21 @@ function activitiesPage() {
 
 function destinationDetailPage(id) {
   const item = findDestination(id);
-  const nearby = destinations.filter(x => x.id !== item.id).slice(item.hidden ? 3 : 6, item.hidden ? 6 : 9);
-  return `${nav("explore")}<main id="main"><section class="detail-hero" style="--detail-image:url('${item.image}')"><div class="container"><span class="tag">${item.hidden ? "Hidden Gem" : "Iconic Destination"}</span></div></section><section class="section"><div class="container detail-layout"><article><div class="detail-title"><div><span class="eyebrow">Home › Explore › ${item.name}</span><h1>${item.name}${item.id === "petra" ? " — The Rose City" : ""}</h1><div class="meta"><span>★ ${item.rating}</span><span>${item.region}</span><span>${item.category}</span></div></div></div><div class="divider"></div><h2 style="font-size:2rem">An unforgettable side of Jordan</h2><p class="detail-copy">${item.description} Beyond Jordan brings context, nearby discoveries, and practical trip planning together so you can experience the place with curiosity and respect.</p><div class="info-grid"><div class="info-box"><strong>Suggested Visit</strong>${item.duration}</div><div class="info-box"><strong>Region</strong>${item.region}</div><div class="info-box"><strong>Best For</strong>${item.category}</div></div><h2 style="font-size:2rem;margin-top:46px">Highlights</h2><ul class="highlights"><li>Distinctive landscapes and a strong sense of place</li><li>Stories shaped by Jordan’s history and local communities</li><li>Easy to combine with nearby destinations in one itinerary</li></ul><h2 style="font-size:2rem;margin-top:46px">Nearby Places</h2><div class="nearby-row">${nearby.map(x => `<a class="mini-card" href="#/destination/${x.id}"><img src="${x.image}" alt="${x.name}"><div><strong>${x.name}</strong><p>${x.region}</p></div></a>`).join("")}</div></article><aside class="booking-box"><span class="eyebrow">Build your journey</span><h3>Save to Trip Itinerary</h3><p>Add ${item.name} to your day-by-day plan or keep it in your favorites.</p><div class="booking-actions"><button class="btn primary wide" data-add-trip="${item.id}">Add to Trip Planner</button><button class="btn outline wide" data-favorite="${item.id}">${state.favorites.includes(item.id) ? "♥ Saved" : "♡ Save Place"}</button><a class="btn ghost wide" href="#/map">View on Map</a></div></aside></div></section></main>${footer()}`;
+  const nearby = destinations.filter(x => x.id !== item.id).map(x => ({ ...x, proximity: Math.hypot(x.lat - item.lat, x.lng - item.lng) })).sort((a, b) => a.proximity - b.proximity).slice(0, 3);
+  const content = destinationContent(item);
+  const gallery = galleryFor(item);
+  const theme = destinationTheme(item);
+  return `${nav("explore")}<main id="main" class="destination-experience" style="${theme.style}">
+    <section class="detail-hero" style="--detail-image:url('${item.image}')"><div class="container"><div class="detail-hero-copy"><span class="tag">${item.hidden ? "Hidden Gem" : "Iconic Destination"}</span><span class="eyebrow">${item.region} · Jordan</span><h1>${item.name}</h1><p>${content.title}</p><div class="detail-hero-meta"><span>★ ${item.rating}</span><span>${item.category}</span><span>${item.duration}</span></div></div><a class="hero-scroll" href="#place-story" aria-label="Continue to the story">↓</a></div></section>
+    <section class="place-intro" id="place-story"><div class="container detail-layout"><article>
+      <span class="eyebrow">Beyond the postcard</span><h2>${content.title}</h2><p class="detail-lead">${item.description}</p><p class="detail-copy">${content.story}</p>
+      <div class="info-grid"><div class="info-box"><span>01</span><strong>Suggested visit</strong>${item.duration}</div><div class="info-box"><span>02</span><strong>Where</strong>${item.region}, Jordan</div><div class="info-box"><span>03</span><strong>Travel mood</strong>${item.category}</div></div>
+      <section class="place-section"><div class="place-section-head"><div><span class="eyebrow">A visual preview</span><h2>The place & region in frames</h2></div><p>Open any image for a closer look. Nearby regional photographs are labeled clearly.</p></div><div class="place-gallery">${gallery.map((photo, index) => `<button class="gallery-tile gallery-tile-${index + 1}" data-gallery-image="${escapeHtml(photo.src)}" data-gallery-label="${escapeHtml(photo.label)}" aria-label="Open ${escapeHtml(photo.label)}"><img src="${photo.src}" alt="${escapeHtml(photo.label)}" loading="lazy"><span>${escapeHtml(photo.label)}</span></button>`).join("")}</div></section>
+      <section class="place-section"><span class="eyebrow">Why go</span><h2>What stays with you</h2><div class="love-grid">${content.love.map((point, index) => `<div class="love-card"><span>0${index + 1}</span><p>${point}</p></div>`).join("")}</div></section>
+      <section class="local-note"><span class="local-note-icon">⌖</span><div><span class="eyebrow">Travel thoughtfully</span><h3>A useful local note</h3><p>${content.tip}</p></div></section>
+      <section class="place-section"><div class="place-section-head"><div><span class="eyebrow">Keep exploring</span><h2>Nearby places</h2></div><a class="text-link" href="#/map">See on the map →</a></div><div class="nearby-row">${nearby.map(x => `<a class="mini-card" href="#/destination/${x.id}" style="${destinationTheme(x).style}"><img src="${x.image}" alt="${x.name}" loading="lazy"><div><span class="eyebrow">${x.category}</span><strong>${x.name}</strong><p>${x.region} · ${x.duration}</p></div></a>`).join("")}</div></section>
+    </article><aside class="booking-box place-booking"><span class="ai-match-badge">✦ Your travel match</span><h3>${item.name} fits your journey</h3><p>${travelMatch(item)}</p><div class="match-tags"><span>${item.category}</span><span>${item.duration}</span><span>${item.hidden ? "Off the usual path" : "Jordan essential"}</span></div><div class="booking-actions"><button class="btn primary wide" data-add-trip="${item.id}">Add to Trip Planner</button><button class="btn outline wide" data-favorite="${item.id}">${state.favorites.includes(item.id) ? "♥ Saved" : "♡ Save Place"}</button><a class="btn ghost wide" href="#/ai-guide">Ask the AI Guide</a></div></aside></div></section>
+  </main>${footer()}`;
 }
 
 function activityDetailPage(id) {
@@ -605,6 +685,11 @@ function closeModal() {
   document.body.classList.remove("modal-open");
 }
 
+function openGalleryImage(src, label) {
+  modalRoot.innerHTML = `<div class="modal-backdrop gallery-backdrop" data-action="close-modal"><figure class="gallery-modal" data-modal><button class="gallery-close" data-action="close-modal" aria-label="Close image">×</button><img src="${escapeHtml(src)}" alt="${escapeHtml(label)}"><figcaption>${escapeHtml(label)}</figcaption></figure></div>`;
+  document.body.classList.add("modal-open");
+}
+
 async function confirmTrip(id) {
   if (!state.trip.stops.includes(id)) state.trip.stops.push(id);
   await syncCloudData();
@@ -677,6 +762,11 @@ async function logout() {
 }
 
 app.addEventListener("click", async event => {
+  const galleryImage = event.target.closest("[data-gallery-image]");
+  if (galleryImage) {
+    openGalleryImage(galleryImage.dataset.galleryImage, galleryImage.dataset.galleryLabel);
+    return;
+  }
   const aiPrompt = event.target.closest("[data-ai-prompt]");
   if (aiPrompt) {
     await askAiConcierge(aiPrompt.dataset.aiPrompt);
