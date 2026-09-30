@@ -7,5 +7,5 @@ export const firebaseConfig = {
   appId: "1:308128110557:web:ed31c645173e93b0c64834"
 };
 
-// أضف مفتاح reCAPTCHA Enterprise هنا بعد إنهاء إعداد Firebase App Check.
-export const appCheckSiteKey = "";
+// مفتاح الموقع العام الخاص بـ reCAPTCHA Enterprise لحماية Firebase App Check.
+export const appCheckSiteKey = "6LfXgNctAAAAACx9jI5izXVpspM5EfB0jwieCYEv";
