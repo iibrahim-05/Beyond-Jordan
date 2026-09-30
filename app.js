@@ -15,10 +15,11 @@ const IMG = {
   alMaghtas: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Jordan%20baptism%20site.jpg?width=1600",
   dana: "https://upload.wikimedia.org/wikipedia/commons/0/0c/Dana_Reserve_02.jpg",
   azraq: "https://lp-cms-production.imgix.net/2023-07/iStock-1151520843.jpg?auto=format%2Ccompress&crop=faces%2Cedges&fit=crop&q=82&w=1600",
-  shobak: "https://images.unsplash.com/photo-1690440850413-d73785c4ac7d?auto=format&fit=crop&w=1600&q=86",
+  shobak: "https://www.historyhit.com/app/uploads/bis-images/5150374/Shobak-Montreal-Castle-1576x1074.jpg",
   ajloun: "https://images.musement.com/cover/0156/71/thumb_15570991_cover_header.jpg?auto=format&fit=crop&w=1400&q=80",
   ummQais: "https://images.locationscout.net/2023/10/umm-qais-jordan-e2qi.webp?h=1400&q=80",
-  iraqAlAmir: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1600&q=86"
+  iraqAlAmir: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1600&q=86",
+  karak: "https://www.historyhit.com/app/uploads/bis-images/5150369/Kerak-Castle-1576x1074.jpg"
 };
 
 const destinations = [
@@ -36,7 +37,7 @@ const destinations = [
   { id: "madaba", name: "Madaba", subtitle: "Mosaics, old streets & living heritage", region: "Madaba", category: "Culture", rating: "4.7", duration: "Half day", image: IMG.amman, lat: 31.7195, lng: 35.7933, description: "See the celebrated mosaic map and explore a welcoming city shaped by layered faiths and traditions." },
   { id: "mount-nebo", name: "Mount Nebo", subtitle: "A panoramic summit of memory", region: "Madaba", category: "History", rating: "4.7", duration: "2–3 hours", image: IMG.deadSea, lat: 31.767, lng: 35.7252, description: "Look across the Jordan Valley from a historic mountain sanctuary with remarkable mosaics." },
   { id: "wadi-mujib", name: "Wadi Mujib", subtitle: "Jordan's dramatic water canyon", region: "Madaba", category: "Adventure", rating: "4.8", duration: "Half day", image: IMG.dana, lat: 31.4667, lng: 35.575, description: "Follow a spectacular canyon where sandstone cliffs rise above seasonal river trails." },
-  { id: "karak", name: "Karak Castle", subtitle: "Stone corridors above the plateau", region: "Karak", category: "History", rating: "4.6", duration: "Half day", image: IMG.shobak, lat: 31.1853, lng: 35.7048, description: "Explore vaulted passageways, defensive towers, and sweeping views from a storied hilltop fortress." },
+  { id: "karak", name: "Karak Castle", subtitle: "Stone corridors above the plateau", region: "Karak", category: "History", rating: "4.6", duration: "Half day", image: IMG.karak, lat: 31.1853, lng: 35.7048, description: "Explore vaulted passageways, defensive towers, and sweeping views from a storied hilltop fortress." },
   { id: "dana", name: "Dana Biosphere", subtitle: "Canyons, village trails & ecology", region: "Tafilah", category: "Nature", rating: "4.8", duration: "1–2 days", image: IMG.dana, hidden: true, distance: "190 km from Amman", lat: 30.626, lng: 35.5207, description: "An eco-tourism haven perched above a chain of dramatic sandstone valleys." },
   { id: "azraq", name: "Azraq Wetland", subtitle: "An oasis in the eastern desert", region: "Zarqa", category: "Nature", rating: "4.6", duration: "Half day", image: IMG.azraq, hidden: true, distance: "115 km from Amman", lat: 31.8325, lng: 36.8174, description: "A lush wetland and bird sanctuary surrounded by black basalt desert." },
   { id: "shobak", name: "Shobak Castle", subtitle: "A solitary Crusader fortress", region: "Ma'an", category: "History", rating: "4.7", duration: "2–3 hours", image: IMG.shobak, hidden: true, distance: "180 km from Amman", lat: 30.5317, lng: 35.56, description: "A windswept hilltop fortress with hidden passages and immense valley views." },
