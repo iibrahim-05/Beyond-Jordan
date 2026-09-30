@@ -196,7 +196,7 @@ function footer() {
       <div class="footer-col"><h3>Experiences</h3><a href="#/activity/wadi-rum-camping">Desert Glamping</a><a href="#/activity/aqaba-diving">Coral Diving</a><a href="#/activity/dana-hiking">Canyon Hiking</a><a href="#/activity/jerash-walk">Historical Walks</a></div>
       <div class="footer-col"><h3>Plan</h3><a href="#/ai-guide">✦ AI Concierge</a><a href="#/trip-planner">Trip Planner</a><a href="#/favorites">Favorites</a><a href="#/map">Map & Nearby</a></div>
     </div>
-    <div class="footer-bottom"><span>© 2026 Beyond Jordan. All rights reserved. Made in Amman.<br><small>Photography: Unsplash, Wikimedia Commons, Royal Jordanian and credited travel partners.</small></span><span>Instagram&nbsp;&nbsp; YouTube&nbsp;&nbsp; Pinterest</span></div>
+    <div class="footer-bottom"><span class="footer-legal">© 2026 Beyond Jordan. All rights reserved. Made in Amman.<br><small>Photography: Unsplash, Wikimedia Commons, Royal Jordanian and credited travel partners.</small></span><span class="footer-socials"><span>Instagram</span><span>YouTube</span><span>Pinterest</span></span></div>
   </div></footer>`;
 }
 
@@ -290,7 +290,7 @@ function destinationDetailPage(id) {
   const gallery = galleryFor(item);
   const theme = destinationTheme(item);
   return `${nav("explore")}<main id="main" class="destination-experience" style="${theme.style}">
-    <section class="detail-hero" style="--detail-image:url('${item.image}')"><div class="container"><div class="detail-hero-copy"><span class="tag">${item.hidden ? "Hidden Gem" : "Iconic Destination"}</span><span class="eyebrow">${item.region} · Jordan</span><h1>${item.name}</h1><p>${content.title}</p><div class="detail-hero-meta"><span>★ ${item.rating}</span><span>${item.category}</span><span>${item.duration}</span></div></div><a class="hero-scroll" href="#place-story" aria-label="Continue to the story">↓</a></div></section>
+    <section class="detail-hero" style="--detail-image:url('${item.image}')"><div class="container"><div class="detail-hero-copy"><span class="tag">${item.hidden ? "Hidden Gem" : "Iconic Destination"}</span><span class="eyebrow">${item.region} · Jordan</span><h1>${item.name}</h1><p>${content.title}</p><div class="detail-hero-meta"><span>★ ${item.rating}</span><span>${item.category}</span><span>${item.duration}</span></div></div></div></section>
     <section class="place-intro" id="place-story"><div class="container detail-layout"><article>
       <span class="eyebrow">Beyond the postcard</span><h2>${content.title}</h2><p class="detail-lead">${item.description}</p><p class="detail-copy">${content.story}</p>
       <div class="info-grid"><div class="info-box"><span>01</span><strong>Suggested visit</strong>${item.duration}</div><div class="info-box"><span>02</span><strong>Where</strong>${item.region}, Jordan</div><div class="info-box"><span>03</span><strong>Travel mood</strong>${item.category}</div></div>
