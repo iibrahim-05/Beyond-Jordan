@@ -7,6 +7,7 @@ const IMG = {
   jerash: "https://images.unsplash.com/photo-1667934776328-73ab81b66915?auto=format&fit=crop&w=1600&q=86",
   aqaba: "https://mc-5126cf56-570a-4992-b7aa-ea41-afd-ep-buemfvb4e0c8e9a7.a03.azurefd.net/-/media/Explore-Jordan/Sun-Sand-and-Sea/Aqaba/Coral-Diving-Center/Coral-Diving-Center-Image.jpeg?rev=323e26a7d20c47719d92e4ad8d9fdd05&w=1260",
   amman: "https://images.unsplash.com/photo-1627734633024-867b54f26e1f?auto=format&fit=crop&w=1600&q=86",
+  romanTheatre: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Roman%20theater%20of%20Amman%2001.jpg?width=1600",
   dana: "https://upload.wikimedia.org/wikipedia/commons/0/0c/Dana_Reserve_02.jpg",
   azraq: "https://lp-cms-production.imgix.net/2023-07/iStock-1151520843.jpg?auto=format%2Ccompress&crop=faces%2Cedges&fit=crop&q=82&w=1600",
   shobak: "https://images.unsplash.com/photo-1690440850413-d73785c4ac7d?auto=format&fit=crop&w=1600&q=86",
@@ -22,6 +23,7 @@ const destinations = [
   { id: "jerash", name: "Jerash", subtitle: "Splendor of Imperial Rome", region: "Jerash", category: "History", rating: "4.8", duration: "Half day", image: IMG.jerash, iconic: true, lat: 32.2747, lng: 35.8914, description: "Follow colonnaded streets through one of the world’s best-preserved Roman cities." },
   { id: "aqaba", name: "Aqaba", subtitle: "Coral Reefs & Gulf of Aqaba", region: "Aqaba", category: "Water", rating: "4.6", duration: "1–3 days", image: IMG.aqaba, iconic: true, lat: 29.5321, lng: 35.0063, description: "Dive into clear Red Sea water, vibrant reefs, and a relaxed coastal city." },
   { id: "amman", name: "Amman", subtitle: "Seven Hills of History & Culture", region: "Amman", category: "Culture", rating: "4.5", duration: "1–2 days", image: IMG.amman, iconic: true, lat: 31.9539, lng: 35.9106, description: "Discover layers of history, lively neighborhoods, galleries, and Jordanian food." },
+  { id: "amman-roman-theatre", name: "Amman Roman Theatre", subtitle: "Philadelphia's Grand Theatre", region: "Amman", category: "History", rating: "4.8", duration: "1–2 hours", image: IMG.romanTheatre, lat: 31.95165805, lng: 35.9393934, description: "Climb the steep cavea of Amman's monumental 2nd-century Roman theatre, built into the hillside when the city was known as Philadelphia." },
   { id: "madaba", name: "Madaba", subtitle: "Mosaics, old streets & living heritage", region: "Madaba", category: "Culture", rating: "4.7", duration: "Half day", image: IMG.amman, lat: 31.7195, lng: 35.7933, description: "See the celebrated mosaic map and explore a welcoming city shaped by layered faiths and traditions." },
   { id: "mount-nebo", name: "Mount Nebo", subtitle: "A panoramic summit of memory", region: "Madaba", category: "History", rating: "4.7", duration: "2–3 hours", image: IMG.deadSea, lat: 31.767, lng: 35.7252, description: "Look across the Jordan Valley from a historic mountain sanctuary with remarkable mosaics." },
   { id: "wadi-mujib", name: "Wadi Mujib", subtitle: "Jordan's dramatic water canyon", region: "Madaba", category: "Adventure", rating: "4.8", duration: "Half day", image: IMG.dana, lat: 31.4667, lng: 35.575, description: "Follow a spectacular canyon where sandstone cliffs rise above seasonal river trails." },
@@ -42,6 +44,7 @@ const DESTINATION_THEMES = {
   petra: ["#a84f3d", "#3d211c", "#f6e7df"], "wadi-rum": ["#ad5c32", "#402219", "#f5e7db"],
   "dead-sea": ["#4c8792", "#173e47", "#e5f1f2"], jerash: ["#a47a42", "#44331f", "#f3ecdf"],
   aqaba: ["#167e98", "#073b49", "#e2f3f6"], amman: ["#56645d", "#26312c", "#e9eeeb"],
+  "amman-roman-theatre": ["#9d6742", "#3b281e", "#f2e8de"],
   madaba: ["#8f6544", "#3f2e24", "#f1e9e1"], "mount-nebo": ["#7d765c", "#363426", "#eeede5"],
   "wadi-mujib": ["#547d70", "#213c34", "#e4efeb"], karak: ["#866246", "#39291f", "#efe7df"],
   dana: ["#547451", "#233722", "#e6eee3"], azraq: ["#367f88", "#143b40", "#e1f0f1"],
@@ -58,6 +61,7 @@ const DESTINATION_CONTENT = {
   jerash: { title: "A city of columns and echoes", story: "Jerash makes Roman urban life unusually easy to imagine. Walk through Hadrian’s Arch, cross the Oval Plaza, follow the Cardo, and listen for the acoustics of its theatres while later churches and homes reveal the city’s many lives.", love: ["The sweeping geometry of the Oval Plaza", "A remarkably complete colonnaded street", "Theatres, temples, gates, and layered history"], tip: "Visit in softer morning or late-afternoon light and allow at least two unhurried hours." },
   aqaba: { title: "Jordan meets the Red Sea", story: "Aqaba brings a different rhythm to a Jordan journey. Coral gardens sit close to shore, mountains frame the Gulf, and warm evenings invite slow waterfront walks, seafood, and a break from long road days.", love: ["Accessible coral reefs and clear water", "Warm coastal evenings throughout much of the year", "Easy pairing with Wadi Rum"], tip: "Choose reef-responsible operators, never touch coral, and check sea conditions before any water activity." },
   amman: { title: "Old stories, new energy", story: "Amman unfolds hill by hill. Roman remains look over a dense downtown of markets and bakeries, while nearby neighborhoods add galleries, independent cafés, design studios, and a distinctly contemporary Jordanian voice.", love: ["Citadel views over the city’s pale hills", "Downtown food, markets, and street life", "Creative neighborhoods with local character"], tip: "Plan by neighborhood—the city is hilly, and short distances on a map can take longer than expected." },
+  "amman-roman-theatre": { title: "The grand stage of ancient Philadelphia", story: "The Roman Theatre was built in the 2nd century AD during the reign of Emperor Antoninus Pius, when Amman was the Decapolis city of Philadelphia. Its semicircular seating, orchestra, stage, entrances, and backstage rooms once served theatrical and musical performances for about 6,000 spectators. The three seating levels reflected the social order of the Roman city, while the restored monument still hosts cultural events today. Its lower spaces also contain the Museum of Popular Life and the Jordan Folklore Museum.", love: ["A dramatic 6,000-seat cavea rising above downtown", "Clear views across the theatre, Odeon, and Hashemite Plaza", "Two small museums that add Jordanian costume and daily-life context"], tip: "Combine it with the nearby Odeon, Nymphaeum, downtown markets, and Amman Citadel. The steps are steep and exposed, so wear stable shoes and bring sun protection." },
   dana: { title: "Jordan in one dramatic valley", story: "Dana descends through a remarkable sequence of landscapes, from Mediterranean highlands toward the arid Wadi Araba. Village life, biodiversity, and long-distance trails make it one of Jordan’s most rewarding places for travelers who want depth and quiet.", love: ["Big canyon views from the historic village", "Trails crossing several ecosystems", "Community-led stays and local guiding"], tip: "Trail conditions and guide requirements vary, so confirm your route with a local reserve operator." },
   ajloun: { title: "Forest hills and fortress views", story: "Ajloun offers a greener side of Jordan. Oak and pine hills surround a strategically placed medieval castle, while village landscapes, olive groves, and walking trails make the north feel intimate and refreshing.", love: ["Ayyubid architecture and defensive details", "Forest air and northern hill views", "Village trails and olive landscapes"], tip: "Pair the castle with a forest walk and Jerash for a balanced northern day." }
 };
@@ -65,7 +69,8 @@ const DESTINATION_CONTENT = {
 const DESTINATION_GALLERY = {
   petra: ["https://images.unsplash.com/photo-1615811648503-479d06197ff3?auto=format&fit=crop&w=1800&q=84"],
   "dead-sea": ["https://images.unsplash.com/photo-1581614787005-f18873bc0df9?auto=format&fit=crop&w=1800&q=84"],
-  jerash: ["https://images.unsplash.com/photo-1774998626530-4a0b9f51c392?auto=format&fit=crop&w=1800&q=84", "https://images.unsplash.com/photo-1633788409811-c73f537c4afe?auto=format&fit=crop&w=1800&q=84", "https://images.unsplash.com/photo-1709912152395-787679e56451?auto=format&fit=crop&w=1800&q=84"]
+  jerash: ["https://images.unsplash.com/photo-1774998626530-4a0b9f51c392?auto=format&fit=crop&w=1800&q=84", "https://images.unsplash.com/photo-1633788409811-c73f537c4afe?auto=format&fit=crop&w=1800&q=84", "https://images.unsplash.com/photo-1709912152395-787679e56451?auto=format&fit=crop&w=1800&q=84"],
+  "amman-roman-theatre": ["https://commons.wikimedia.org/wiki/Special:Redirect/file/Roman%20theater%20of%20Amman%2004.jpg?width=1600", "https://commons.wikimedia.org/wiki/Special:Redirect/file/Roman%20theater%20of%20Amman%2006.jpg?width=1600"]
 };
 
 const activities = [
@@ -623,6 +628,7 @@ async function createAiPlan(form) {
 const DESTINATION_ALIASES = {
   petra: ["petra", "البتراء"], "wadi-rum": ["wadi rum", "وادي رم"], "dead-sea": ["dead sea", "البحر الميت"],
   jerash: ["jerash", "جرش"], aqaba: ["aqaba", "العقبة"], amman: ["amman", "عمان", "عمّان"],
+  "amman-roman-theatre": ["amman roman theatre", "roman theatre", "roman theater", "المدرج الروماني", "المسرح الروماني"],
   madaba: ["madaba", "مادبا"], "mount-nebo": ["mount nebo", "جبل نيبو"], "wadi-mujib": ["wadi mujib", "وادي الموجب"],
   karak: ["karak", "الكرك"], dana: ["dana", "ضانا"], azraq: ["azraq", "الأزرق", "الازرق"],
   shobak: ["shobak", "الشوبك"], ajloun: ["ajloun", "عجلون"], "umm-qais": ["umm qais", "ام قيس", "أم قيس"],
@@ -638,6 +644,7 @@ const ARABIC_DESTINATION_GUIDE = {
   jerash: { name: "جرش", description: "واحدة من أفضل المدن الرومانية المحفوظة، وتضم الساحة البيضاوية وشارع الأعمدة والمسارح والمعابد وطبقات تاريخية لاحقة.", highlights: ["الساحة البيضاوية المميزة", "شارع الأعمدة والمسارح ذات الصوتيات الرائعة", "بوابة هادريان والمعابد والكنائس"], tip: "خصص ساعتين على الأقل وزرها صباحًا أو آخر النهار لتجنب الحر والاستمتاع بالإضاءة." },
   aqaba: { name: "العقبة", description: "مدينة الأردن الساحلية على البحر الأحمر، تجمع الشعاب المرجانية والمياه الدافئة والأجواء المسائية الهادئة.", highlights: ["الغوص والسنوركل قرب الشعاب", "الشاطئ والممشى والأجواء الدافئة", "سهولة دمجها مع وادي رم"], tip: "اختر نشاطًا يحافظ على الشعاب ولا تلمس المرجان، وتحقق من حالة البحر قبل النشاط." },
   amman: { name: "عمّان", description: "عاصمة مبنية على التلال تجمع آثار القلعة والمدرج الروماني وأسواق وسط البلد مع أحياء فنية ومقاهٍ وثقافة معاصرة.", highlights: ["إطلالة القلعة على تلال المدينة", "طعام وأسواق وسط البلد", "أحياء اللويبدة وجبل عمّان الإبداعية"], tip: "رتب يومك حسب الأحياء لأن المدينة جبلية والمسافات القصيرة قد تستغرق وقتًا." },
+  "amman-roman-theatre": { name: "المدرّج الروماني في عمّان", description: "مسرح روماني ضخم بُني في القرن الثاني الميلادي في عهد الإمبراطور أنطونينوس بيوس، عندما كانت عمّان تُعرف باسم فيلادلفيا. كان مخصصًا للعروض المسرحية والموسيقية ويتسع لنحو 6,000 متفرج.", highlights: ["المدرجات الحجرية المرتفعة وصوتيات المسرح", "الإطلالة على ساحة الهاشمي ووسط البلد", "متحف الحياة الشعبية ومتحف الفولكلور في أجزائه السفلية"], tip: "ادمجه مع الأوديون وسبيل الحوريات وأسواق وسط البلد وجبل القلعة، وارتدِ حذاءً ثابتًا لأن الدرج مرتفع ومكشوف للشمس." },
   madaba: { name: "مادبا", description: "مدينة معروفة بفسيفسائها البيزنطية، وأشهرها خريطة الأراضي المقدسة، مع شوارع قديمة ومجتمع محلي متنوع.", highlights: ["خريطة مادبا الفسيفسائية", "الكنائس والمواقع الأثرية", "الأسواق والمطاعم المحلية"], tip: "ادمجها مع جبل نيبو في نصف يوم، وتحقق من مواعيد دخول الكنائس." },
   "mount-nebo": { name: "جبل نيبو", description: "قمة تاريخية ودينية تطل على وادي الأردن وتضم بقايا كنيسة وفسيفساء جميلة.", highlights: ["الإطلالة الواسعة على الأغوار", "الفسيفساء والبقايا الدينية", "قربه من مادبا"], tip: "الرؤية تعتمد على الطقس؛ زره في يوم صافٍ وادمجه مع مادبا." },
   "wadi-mujib": { name: "وادي الموجب", description: "وادي عميق قرب البحر الميت يشتهر بمسارات مائية موسمية بين جدران صخرية شاهقة.", highlights: ["المشي المائي داخل السيق", "المنحدرات والمناظر الدرامية", "مغامرة قريبة من البحر الميت"], tip: "فتح المسارات وشروط العمر تعتمد على الموسم والطقس؛ تحقق من المحمية قبل الذهاب." },
@@ -663,7 +670,7 @@ function detailedDestinationAnswer(item, arabic) {
   const content = destinationContent(item);
   if (arabic) {
     const guide = ARABIC_DESTINATION_GUIDE[item.id];
-    const duration = ({ "1–2 days": "يوم إلى يومين", "1–3 days": "يوم إلى ثلاثة أيام", "Half day": "نصف يوم", "2–3 hours": "ساعتان إلى ثلاث ساعات" })[item.duration] || item.duration;
+    const duration = ({ "1–2 days": "يوم إلى يومين", "1–3 days": "يوم إلى ثلاثة أيام", "Half day": "نصف يوم", "1–2 hours": "ساعة إلى ساعتين", "2–3 hours": "ساعتان إلى ثلاث ساعات" })[item.duration] || item.duration;
     return `ما هي ${guide.name}؟\n${guide.description}\n\nلماذا تستحق الزيارة؟\n• ${guide.highlights.join("\n• ")}\n\nكيف تخطط للزيارة؟\nالمدة المقترحة: ${duration}. ${guide.tip}\n\nيمكنك دمجها مع الأماكن القريبة الظاهرة في الخريطة ومخطط الرحلة. تأكد قبل الزيارة من المواعيد والأسعار وحالة الطقس أو المسارات لأنها معلومات متغيرة.`;
   }
   return `What is ${item.name}?\n${item.description} ${content.story}\n\nWhy it is worth visiting\n• ${content.love.join("\n• ")}\n\nHow to plan it\nSuggested time: ${item.duration}, in ${item.region}. ${content.tip}\n\nYou can combine it with nearby places shown on the map and in the Trip Planner. Verify current hours, prices, weather, and trail or access conditions before visiting.`;
