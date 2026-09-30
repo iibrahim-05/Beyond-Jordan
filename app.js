@@ -112,14 +112,14 @@ async function initFirebase() {
   try {
     const [{ firebaseConfig, appCheckSiteKey }, firebaseApp, firebaseAuth, firestore] = await Promise.all([
       import("./firebase-config.js"),
-      import("https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js"),
-      import("https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js"),
-      import("https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js")
+      import("https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js"),
+      import("https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js"),
+      import("https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js")
     ]);
     if (!firebaseConfig.apiKey || firebaseConfig.apiKey.includes("YOUR_")) return;
     const firebase = firebaseApp.initializeApp(firebaseConfig);
     if (appCheckSiteKey) {
-      const appCheck = await import("https://www.gstatic.com/firebasejs/12.2.1/firebase-app-check.js");
+      const appCheck = await import("https://www.gstatic.com/firebasejs/12.19.0/firebase-app-check.js");
       appCheck.initializeAppCheck(firebase, {
         provider: new appCheck.ReCaptchaEnterpriseProvider(appCheckSiteKey),
         isTokenAutoRefreshEnabled: true
@@ -129,13 +129,14 @@ async function initFirebase() {
     const db = firestore.getFirestore(firebase);
     state.firebase = { auth, db, firebaseAuth, firestore };
     try {
-      const firebaseAI = await import("https://www.gstatic.com/firebasejs/12.2.1/firebase-ai.js");
+      const firebaseAI = await import("https://www.gstatic.com/firebasejs/12.19.0/firebase-ai.js");
       const ai = firebaseAI.getAI(firebase, { backend: new firebaseAI.GoogleAIBackend() });
       const systemInstruction = `You are Beyond Jordan AI, a capable, warm, natural general assistant inside a Jordan tourism website. Answer whatever ordinary question the user asks, not only travel questions, and keep a real multi-turn conversation: remember what the user already said, understand follow-ups and pronouns, ask useful clarifying questions, and never repeat a canned template. Answer in the user's language. Your strongest specialty is Jordan: history, stories, destinations, culture, food, activities, routes, comparisons, accessibility, packing, and trip planning. Give useful depth when asked, but keep simple answers concise. Never invent live prices, opening hours, permits, weather, safety conditions, visa rules, availability, or transport schedules; clearly say when a current official check is required.
 
 Verified Beyond Jordan destination knowledge:
 ${destinationCatalog()}`;
-      const modelNames = ["gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-3.8-flash"];
+      // ابدأ بالنموذج الأخف والأسرع، ثم انتقل تلقائيًا إلى البدائل عند تعذّر الرد.
+      const modelNames = ["gemini-3.5-flash-lite", "gemini-3.5-flash", "gemini-3.1-flash-lite"];
       state.firebase.aiModels = modelNames.map(model => firebaseAI.getGenerativeModel(ai, { model, systemInstruction }));
       state.firebase.aiModel = state.firebase.aiModels[0];
     } catch (aiError) {
@@ -149,7 +150,8 @@ ${destinationCatalog()}`;
       render();
     });
   } catch (error) {
-    console.info("Beyond Jordan is running in local demo mode. Add firebase-config.js to connect Firebase.");
+    state.aiError = error?.message || "Firebase failed to initialize";
+    console.error("Firebase initialization failed:", error);
   }
 }
 
@@ -542,7 +544,7 @@ async function runGemini(prompt) {
   throw lastError || new Error("The AI service is temporarily unavailable");
 }
 
-function withAiTimeout(request, timeoutMs = 20000) {
+function withAiTimeout(request, timeoutMs = 12000) {
   return Promise.race([
     request,
     new Promise((_, reject) => setTimeout(() => reject(new Error("AI model timed out; trying the next model")), timeoutMs))
@@ -561,7 +563,7 @@ async function runGeminiChat(message) {
     try {
       const chat = model.startChat({
         history,
-        generationConfig: { maxOutputTokens: 1600, temperature: 0.75, topP: 0.9 }
+        generationConfig: { maxOutputTokens: 1100, temperature: 0.75, topP: 0.9 }
       });
       const result = await withAiTimeout(chat.sendMessage(message));
       const text = result.response.text();
@@ -682,12 +684,14 @@ function localConciergeAnswer(question) {
     return arabic ? `أماكن قريبة من ${ARABIC_DESTINATION_GUIDE[base.id].name}:\n• ${nearby.map(item => `${ARABIC_DESTINATION_GUIDE[item.id].name}: ${ARABIC_DESTINATION_GUIDE[item.id].description}`).join("\n• ")}\n\nأقدر أرتبهم لك في يوم واحد أو أكثر إذا أخبرتني بوسيلة التنقل والوقت المتاح.` : `Places near ${base.name}:\n• ${nearby.map(item => `${item.name}: ${item.description}`).join("\n• ")}\n\nTell me your available time and transport, and I can arrange them into a practical route.`;
   }
   if (matches.length === 1) return detailedDestinationAnswer(matches[0], arabic);
+  // طلب مكان هادئ قد يذكر أماكن مستبعدة مثل "غير البتراء ووادي رم"؛
+  // أعطِ اقتراحات هادئة بدل اعتبار الأسماء المذكورة طلبًا للمقارنة.
+  if (/hidden|quiet|unknown|local|gem|مخفي|هادئ|غير معروف|محلي/.test(q)) return arabic ? "إذا بدك أماكن أهدأ وأقل شهرة، جرّب قرية ومسارات ضانا، قلعة الشوبك، عراق الأمير، أم الجمال، طبقة فحل أو أزرق. ضانا مناسبة للطبيعة والمشي، أم الجمال للتاريخ البازلتي، وعراق الأمير للحِرف والوادي الأخضر. احكيلي عدد الأيام ونوع التجربة اللي بتحبها عشان أحدد لك أفضل خيار." : "For a quieter Jordan story, consider Dana’s village trails, Shobak Castle, Iraq Al-Amir, Umm al-Jimal, Pella, or Azraq. Dana suits hiking and ecology, Umm al-Jimal offers basalt history, and Iraq Al-Amir blends craft and a green valley. Tell me your days and interests and I’ll narrow it down.";
   if (matches.length > 1 || /compare|versus| vs |قارن|الفرق|ولا/.test(q)) {
     const choices = matches.length > 1 ? matches.slice(0, 3) : [findDestination("petra"), findDestination("wadi-rum")];
     const comparison = choices.map(item => `${item.name}: ${item.category}, ${item.duration}. ${item.description}`).join("\n\n");
     return arabic ? `مقارنة سريعة حسب التجربة والوقت:\n\n${comparison}\n\nاختيارك الأفضل يعتمد على عدد الأيام واهتماماتك. احكيلي كم يوم معك وشو بتحب، وببني لك الاختيار الأنسب.` : `A quick comparison by experience and time:\n\n${comparison}\n\nThe best choice depends on your available days and interests. Tell me both, and I’ll make a more precise recommendation.`;
   }
-  if (/hidden|quiet|unknown|local|gem|مخفي|هادئ|غير معروف|محلي/.test(q)) return arabic ? "إذا بدك أماكن أهدأ وأقل شهرة، جرّب قرية ومسارات ضانا، قلعة الشوبك، عراق الأمير، أم الجمال، طبقة فحل أو أزرق. ضانا مناسبة للطبيعة والمشي، أم الجمال للتاريخ البازلتي، وعراق الأمير للحِرف والوادي الأخضر. احكيلي عدد الأيام ونوع التجربة اللي بتحبها عشان أحدد لك أفضل خيار." : "For a quieter Jordan story, consider Dana’s village trails, Shobak Castle, Iraq Al-Amir, Umm al-Jimal, Pella, or Azraq. Dana suits hiking and ecology, Umm al-Jimal offers basalt history, and Iraq Al-Amir blends craft and a green valley. Tell me your days and interests and I’ll narrow it down.";
   if (/family|children|kids|عائلة|اطفال|أطفال/.test(q)) return arabic ? "لرحلة عائلية متوازنة، اجمع عمّان وجرش ومادبا والبحر الميت والعقبة. خفف عدد المحطات اليومية، واترك وقتًا للراحة، واختر أنشطة تناسب أعمار الأطفال. شروط السباحة والمسارات والطقس تتغير، لذلك راجع الجهة أو المشغّل قبل الزيارة." : "A balanced family route can combine Amman, Jerash, Madaba, the Dead Sea, and Aqaba. Keep daily stops light, leave rest time, and match activities to the children’s ages. Swimming, trail, and weather requirements change, so confirm them with the venue or operator.";
   if (/budget|cheap|cost|price|ميزانية|رخيص|سعر|تكلفة/.test(q)) return arabic ? "لتقليل التكلفة، اجمع الأماكن القريبة في يوم واحد: عمّان + عراق الأمير + السلط، أو مادبا + جبل نيبو + البحر الميت. استخدم مخطط الرحلة لتقليل الرجوع على نفس الطريق. الأسعار والمواصلات معلومات متغيرة، لذلك لازم تتأكد منها قبل الحجز." : "For a lighter budget, group nearby places into one day: Amman + Iraq Al-Amir + As-Salt, or Madaba + Mount Nebo + the Dead Sea. Use the Trip Planner to reduce backtracking. Prices and transport costs change, so verify them before booking.";
   if (/water|swim|sea|div|سباحة|بحر|غوص|ماء/.test(q)) return arabic ? "العقبة هي الأفضل للشعاب المرجانية والغوص والبحر الأحمر، والبحر الميت للطفو والاسترخاء، ووادي الموجب لمغامرة مائية موسمية داخل الوادي. لا تلمس المرجان، وتأكد من حالة البحر وفتح المسارات وشروط العمر قبل الانطلاق." : "Choose Aqaba for reefs and Red Sea diving, the Dead Sea for floating and wellness, and Wadi Mujib for a seasonal water-canyon adventure. Never touch coral, and confirm sea conditions, trail openings, and age requirements before you go.";
