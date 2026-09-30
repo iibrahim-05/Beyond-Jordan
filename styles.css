@@ -242,6 +242,10 @@ p { color: var(--muted); line-height: 1.7; }
 .map-card img { height: 70px; border-radius: 7px; }
 .map-card h3 { margin: 0 0 4px; font-size: .96rem; }
 .map-card p { margin: 0; font-size: .72rem; }
+.map-card-heritage { width: 100%; color: inherit; text-align: left; font: inherit; cursor: pointer; }
+.map-card-heritage .map-card-number { background: #d7a45f; color: var(--green-900); }
+.map-card-placeholder { height: 70px; display: grid; place-items: center; border-radius: 7px; color: #f4d39b; background: linear-gradient(145deg, #153f32, #315b4e); font-size: 1.35rem; }
+.map-info-window small { display: inline-block; margin-top: 2px; color: #7a6f62; font-size: .68rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
 .map-empty { margin-top: 18px; padding: 24px; border: 1px dashed var(--sand-300); border-radius: 10px; text-align: center; background: var(--sand-50); }
 .map-empty p { margin: 6px 0 0; font-size: .82rem; }
 

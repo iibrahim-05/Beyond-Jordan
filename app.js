@@ -1,4 +1,5 @@
 import { CARTO_BASEMAP_STYLE } from "./map-config.js";
+import { heritageSites } from "./heritage-sites.js";
 
 const IMG = {
   petra: "https://images.unsplash.com/photo-1551171129-8ce1ebb911b3?auto=format&fit=crop&w=1600&q=86",
@@ -8,6 +9,10 @@ const IMG = {
   aqaba: "https://mc-5126cf56-570a-4992-b7aa-ea41-afd-ep-buemfvb4e0c8e9a7.a03.azurefd.net/-/media/Explore-Jordan/Sun-Sand-and-Sea/Aqaba/Coral-Diving-Center/Coral-Diving-Center-Image.jpeg?rev=323e26a7d20c47719d92e4ad8d9fdd05&w=1260",
   amman: "https://images.unsplash.com/photo-1627734633024-867b54f26e1f?auto=format&fit=crop&w=1600&q=86",
   romanTheatre: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Roman%20theater%20of%20Amman%2001.jpg?width=1600",
+  ammanCitadel: "https://www.doa.gov.jo/EBV4.0/Root_Storage/EN/%D8%B5%D9%88%D8%B1_%D9%85%D9%86_%D8%AC%D8%A8%D9%84_%D8%A7%D9%84%D9%82%D9%84%D8%B9%D8%A9.png",
+  ummArRasas: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Umm%20ar-Rasas%20Mosaic.jpg?width=1600",
+  quseirAmra: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Qasr%20Amra%20in%20Jordan%2C%202009.jpg?width=1600",
+  alMaghtas: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Jordan%20baptism%20site.jpg?width=1600",
   dana: "https://upload.wikimedia.org/wikipedia/commons/0/0c/Dana_Reserve_02.jpg",
   azraq: "https://lp-cms-production.imgix.net/2023-07/iStock-1151520843.jpg?auto=format%2Ccompress&crop=faces%2Cedges&fit=crop&q=82&w=1600",
   shobak: "https://images.unsplash.com/photo-1690440850413-d73785c4ac7d?auto=format&fit=crop&w=1600&q=86",
@@ -24,6 +29,10 @@ const destinations = [
   { id: "aqaba", name: "Aqaba", subtitle: "Coral Reefs & Gulf of Aqaba", region: "Aqaba", category: "Water", rating: "4.6", duration: "1–3 days", image: IMG.aqaba, iconic: true, lat: 29.5321, lng: 35.0063, description: "Dive into clear Red Sea water, vibrant reefs, and a relaxed coastal city." },
   { id: "amman", name: "Amman", subtitle: "Seven Hills of History & Culture", region: "Amman", category: "Culture", rating: "4.5", duration: "1–2 days", image: IMG.amman, iconic: true, lat: 31.9539, lng: 35.9106, description: "Discover layers of history, lively neighborhoods, galleries, and Jordanian food." },
   { id: "amman-roman-theatre", name: "Amman Roman Theatre", subtitle: "Philadelphia's Grand Theatre", region: "Amman", category: "History", rating: "4.8", duration: "1–2 hours", image: IMG.romanTheatre, lat: 31.95165805, lng: 35.9393934, description: "Climb the steep cavea of Amman's monumental 2nd-century Roman theatre, built into the hillside when the city was known as Philadelphia." },
+  { id: "amman-citadel", name: "Amman Citadel", subtitle: "Layers of Amman on Jabal al-Qal'a", region: "Amman", category: "History", rating: "4.8", duration: "2–3 hours", image: IMG.ammanCitadel, lat: 31.95401697, lng: 35.93486821, description: "Walk through Bronze Age, Ammonite, Roman, Byzantine, and Umayyad layers on the hill that overlooks downtown Amman." },
+  { id: "umm-ar-rasas", name: "Umm ar-Rasas", subtitle: "Mosaics, churches & the stylite tower", region: "Amman", category: "History", rating: "4.7", duration: "2–3 hours", image: IMG.ummArRasas, lat: 31.51401, lng: 35.9202, description: "Explore a UNESCO-listed settlement that grew from a Roman camp into a city of churches, mosaics, and early Islamic remains." },
+  { id: "quseir-amra", name: "Quseir Amra", subtitle: "Umayyad frescoes in the eastern desert", region: "Zarqa", category: "History", rating: "4.7", duration: "1–2 hours", image: IMG.quseirAmra, lat: 31.8018, lng: 36.5874, description: "Enter an early 8th-century Umayyad bath complex whose remarkable wall paintings and zodiac dome earned World Heritage status." },
+  { id: "al-maghtas", name: "Al-Maghtas", subtitle: "Bethany Beyond the Jordan", region: "Balqa", category: "History", rating: "4.8", duration: "2–3 hours", image: IMG.alMaghtas, lat: 31.8372, lng: 35.5503, description: "Visit the UNESCO-listed Baptism Site on the eastern bank of the Jordan River, a landscape of pilgrimage, churches, and archaeological remains." },
   { id: "madaba", name: "Madaba", subtitle: "Mosaics, old streets & living heritage", region: "Madaba", category: "Culture", rating: "4.7", duration: "Half day", image: IMG.amman, lat: 31.7195, lng: 35.7933, description: "See the celebrated mosaic map and explore a welcoming city shaped by layered faiths and traditions." },
   { id: "mount-nebo", name: "Mount Nebo", subtitle: "A panoramic summit of memory", region: "Madaba", category: "History", rating: "4.7", duration: "2–3 hours", image: IMG.deadSea, lat: 31.767, lng: 35.7252, description: "Look across the Jordan Valley from a historic mountain sanctuary with remarkable mosaics." },
   { id: "wadi-mujib", name: "Wadi Mujib", subtitle: "Jordan's dramatic water canyon", region: "Madaba", category: "Adventure", rating: "4.8", duration: "Half day", image: IMG.dana, lat: 31.4667, lng: 35.575, description: "Follow a spectacular canyon where sandstone cliffs rise above seasonal river trails." },
@@ -45,6 +54,8 @@ const DESTINATION_THEMES = {
   "dead-sea": ["#4c8792", "#173e47", "#e5f1f2"], jerash: ["#a47a42", "#44331f", "#f3ecdf"],
   aqaba: ["#167e98", "#073b49", "#e2f3f6"], amman: ["#56645d", "#26312c", "#e9eeeb"],
   "amman-roman-theatre": ["#9d6742", "#3b281e", "#f2e8de"],
+  "amman-citadel": ["#8c7353", "#352d22", "#efe9df"], "umm-ar-rasas": ["#86714c", "#332c20", "#f1eadc"],
+  "quseir-amra": ["#a05a3c", "#3f241a", "#f3e5dc"], "al-maghtas": ["#4d7e86", "#17393e", "#e4eff1"],
   madaba: ["#8f6544", "#3f2e24", "#f1e9e1"], "mount-nebo": ["#7d765c", "#363426", "#eeede5"],
   "wadi-mujib": ["#547d70", "#213c34", "#e4efeb"], karak: ["#866246", "#39291f", "#efe7df"],
   dana: ["#547451", "#233722", "#e6eee3"], azraq: ["#367f88", "#143b40", "#e1f0f1"],
@@ -62,6 +73,10 @@ const DESTINATION_CONTENT = {
   aqaba: { title: "Jordan meets the Red Sea", story: "Aqaba brings a different rhythm to a Jordan journey. Coral gardens sit close to shore, mountains frame the Gulf, and warm evenings invite slow waterfront walks, seafood, and a break from long road days.", love: ["Accessible coral reefs and clear water", "Warm coastal evenings throughout much of the year", "Easy pairing with Wadi Rum"], tip: "Choose reef-responsible operators, never touch coral, and check sea conditions before any water activity." },
   amman: { title: "Old stories, new energy", story: "Amman unfolds hill by hill. Roman remains look over a dense downtown of markets and bakeries, while nearby neighborhoods add galleries, independent cafés, design studios, and a distinctly contemporary Jordanian voice.", love: ["Citadel views over the city’s pale hills", "Downtown food, markets, and street life", "Creative neighborhoods with local character"], tip: "Plan by neighborhood—the city is hilly, and short distances on a map can take longer than expected." },
   "amman-roman-theatre": { title: "The grand stage of ancient Philadelphia", story: "The Roman Theatre was built in the 2nd century AD during the reign of Emperor Antoninus Pius, when Amman was the Decapolis city of Philadelphia. Its semicircular seating, orchestra, stage, entrances, and backstage rooms once served theatrical and musical performances for about 6,000 spectators. The three seating levels reflected the social order of the Roman city, while the restored monument still hosts cultural events today. Its lower spaces also contain the Museum of Popular Life and the Jordan Folklore Museum.", love: ["A dramatic 6,000-seat cavea rising above downtown", "Clear views across the theatre, Odeon, and Hashemite Plaza", "Two small museums that add Jordanian costume and daily-life context"], tip: "Combine it with the nearby Odeon, Nymphaeum, downtown markets, and Amman Citadel. The steps are steep and exposed, so wear stable shoes and bring sun protection." },
+  "amman-citadel": { title: "Amman's history on one hill", story: "Jabal al-Qal'a preserves a long sequence of settlement above the modern capital. The Ammonites governed from this hill when the city was Rabbath Ammon; Roman Philadelphia added the great temple traditionally associated with Hercules; Byzantine builders raised churches; and the Umayyads created a palace, mosque, market, and administrative quarter. The archaeological museum and panoramic setting make the layers easy to connect.", love: ["The Temple of Hercules and Umayyad Palace", "Wide views over downtown and the Roman Theatre", "Bronze Age to Islamic objects in the archaeological museum"], tip: "Visit in the morning or near sunset, allow time for the museum, and combine the hill with downtown sites below." },
+  "umm-ar-rasas": { title: "A city written in mosaics", story: "Umm ar-Rasas began as a Roman military camp and expanded into a town during the Byzantine and early Islamic periods. Sixteen churches have been identified, and the Church of Saint Stephen preserves an exceptional mosaic floor showing cities of the region. Beyond the church complex stands a unique stylite tower connected with an ascetic tradition of isolation and prayer.", love: ["The detailed city mosaics in Saint Stephen's Church", "A fortified Roman camp beneath later urban layers", "The solitary stylite tower and open plateau landscape"], tip: "The mosaics are protected indoors, but much of the site is exposed. Bring sun protection and combine the visit with Madaba." },
+  "quseir-amra": { title: "A painted Umayyad world", story: "Quseir Amra was built in the early 8th century as part of an Umayyad desert estate. Its audience hall and bath rooms contain rare figurative frescoes of rulers, hunting, craft, bathing, music, and the heavens. A painted zodiac on the domed ceiling is among the site's most remarkable features, while the well and hydraulic system explain how the complex functioned in the badia.", love: ["Rare early Islamic figurative wall paintings", "The zodiac dome above the hot room", "A compact monument that rewards close looking"], tip: "Pair it with Qasr Kharana and Azraq Castle as a desert-castles route. Interior light is low, so take time for your eyes to adjust." },
+  "al-maghtas": { title: "A pilgrimage landscape by the Jordan", story: "Al-Maghtas, also known as Bethany Beyond the Jordan, preserves archaeological remains connected with early Christian pilgrimage and the tradition of the baptism of Jesus. The protected landscape includes Tell al-Kharrar, baptism pools, churches, monasteries, caves, and routes leading toward the Jordan River. It was inscribed on the UNESCO World Heritage List in 2015.", love: ["A quiet landscape with deep religious meaning", "Early churches, baptism pools, and pilgrimage remains", "The meeting of archaeology, faith, and the Jordan River"], tip: "Access is organized through the site's visitor system. Dress respectfully and confirm current visiting arrangements before traveling." },
   dana: { title: "Jordan in one dramatic valley", story: "Dana descends through a remarkable sequence of landscapes, from Mediterranean highlands toward the arid Wadi Araba. Village life, biodiversity, and long-distance trails make it one of Jordan’s most rewarding places for travelers who want depth and quiet.", love: ["Big canyon views from the historic village", "Trails crossing several ecosystems", "Community-led stays and local guiding"], tip: "Trail conditions and guide requirements vary, so confirm your route with a local reserve operator." },
   ajloun: { title: "Forest hills and fortress views", story: "Ajloun offers a greener side of Jordan. Oak and pine hills surround a strategically placed medieval castle, while village landscapes, olive groves, and walking trails make the north feel intimate and refreshing.", love: ["Ayyubid architecture and defensive details", "Forest air and northern hill views", "Village trails and olive landscapes"], tip: "Pair the castle with a forest walk and Jerash for a balanced northern day." }
 };
@@ -70,7 +85,10 @@ const DESTINATION_GALLERY = {
   petra: ["https://images.unsplash.com/photo-1615811648503-479d06197ff3?auto=format&fit=crop&w=1800&q=84"],
   "dead-sea": ["https://images.unsplash.com/photo-1581614787005-f18873bc0df9?auto=format&fit=crop&w=1800&q=84"],
   jerash: ["https://images.unsplash.com/photo-1774998626530-4a0b9f51c392?auto=format&fit=crop&w=1800&q=84", "https://images.unsplash.com/photo-1633788409811-c73f537c4afe?auto=format&fit=crop&w=1800&q=84", "https://images.unsplash.com/photo-1709912152395-787679e56451?auto=format&fit=crop&w=1800&q=84"],
-  "amman-roman-theatre": ["https://commons.wikimedia.org/wiki/Special:Redirect/file/Roman%20theater%20of%20Amman%2004.jpg?width=1600", "https://commons.wikimedia.org/wiki/Special:Redirect/file/Roman%20theater%20of%20Amman%2006.jpg?width=1600"]
+  "amman-roman-theatre": ["https://commons.wikimedia.org/wiki/Special:Redirect/file/Roman%20theater%20of%20Amman%2004.jpg?width=1600", "https://commons.wikimedia.org/wiki/Special:Redirect/file/Roman%20theater%20of%20Amman%2006.jpg?width=1600"],
+  "umm-ar-rasas": ["https://commons.wikimedia.org/wiki/Special:Redirect/file/Umm%20Rasas%20Madaba%20mosaic.JPG?width=1600", "https://commons.wikimedia.org/wiki/Special:Redirect/file/Umm%20ar-Rasas%20Church%20of%20St.%20Stephen%20central%20mosaic%202758.jpg?width=1600"],
+  "quseir-amra": ["https://commons.wikimedia.org/wiki/Special:Redirect/file/Quseir%20Amra%20Zodiac.jpg?width=1600", "https://commons.wikimedia.org/wiki/Special:Redirect/file/Jordan%20Qusair%20Amra%202013%200425.jpg?width=1600"],
+  "al-maghtas": ["https://commons.wikimedia.org/wiki/Special:Redirect/file/Jesus%20baptism%20site%2C%20River%20Jordan..jpg?width=1600"]
 };
 
 const activities = [
@@ -336,7 +354,13 @@ function destroyInteractiveMap() {
 
 function filteredMapItems() {
   const query = state.mapQuery.trim().toLowerCase();
-  return destinations.map((item, index) => ({ ...item, mapNumber: index + 1 })).filter(item => !query || `${item.name} ${item.region} ${item.category}`.toLowerCase().includes(query));
+  const mapCatalog = [
+    ...destinations.map(item => ({ ...item, kind: "destination", hasPage: true })),
+    ...heritageSites.map(item => ({ ...item, kind: "heritage", hasPage: false, subtitle: item.era, image: item.image || "" }))
+  ];
+  return mapCatalog
+    .map((item, index) => ({ ...item, mapNumber: index + 1 }))
+    .filter(item => !query || `${item.name} ${item.region} ${item.category} ${item.era || ""} ${item.description || ""}`.toLowerCase().includes(query));
 }
 
 async function initInteractiveMap(items) {
@@ -381,7 +405,11 @@ async function initInteractiveMap(items) {
             region: item.region,
             category: item.category,
             image: item.image,
-            mapNumber: item.mapNumber
+            mapNumber: item.mapNumber,
+            kind: item.kind,
+            era: item.era || "",
+            description: item.description || "",
+            hasPage: item.hasPage
           }
         };
       })
@@ -405,6 +433,7 @@ async function initInteractiveMap(items) {
         id: "destination-halos",
         type: "circle",
         source: "destinations",
+        filter: ["==", ["get", "kind"], "destination"],
         paint: {
           "circle-radius": ["case", ["boolean", ["feature-state", "hover"], false], 28, 20],
           "circle-color": "#bd6644",
@@ -418,6 +447,7 @@ async function initInteractiveMap(items) {
         id: "destination-points",
         type: "circle",
         source: "destinations",
+        filter: ["==", ["get", "kind"], "destination"],
         paint: {
           "circle-radius": ["case", ["boolean", ["feature-state", "hover"], false], 19, 15],
           "circle-color": ["case", ["boolean", ["feature-state", "hover"], false], "#0b2d23", "#bd6644"],
@@ -432,6 +462,7 @@ async function initInteractiveMap(items) {
         id: "destination-labels",
         type: "symbol",
         source: "destinations",
+        filter: ["==", ["get", "kind"], "destination"],
         layout: {
           "text-field": ["to-string", ["get", "mapNumber"]],
           "text-size": 11,
@@ -440,20 +471,33 @@ async function initInteractiveMap(items) {
         },
         paint: { "text-color": "#ffffff" }
       });
+      map.addLayer({
+        id: "heritage-points",
+        type: "circle",
+        source: "destinations",
+        filter: ["==", ["get", "kind"], "heritage"],
+        paint: {
+          "circle-radius": ["interpolate", ["linear"], ["zoom"], 5, 4.5, 10, 8],
+          "circle-color": ["case", ["boolean", ["feature-state", "hover"], false], "#0b2d23", "#d7a45f"],
+          "circle-stroke-width": 2,
+          "circle-stroke-color": "#ffffff",
+          "circle-opacity": 0.95
+        }
+      });
 
       map.on("click", event => {
-        const features = map.queryRenderedFeatures(event.point, { layers: ["destination-labels", "destination-points"] });
+        const features = map.queryRenderedFeatures(event.point, { layers: ["destination-labels", "destination-points", "heritage-points"] });
         if (!features.length) return;
         const feature = features[0];
         const place = feature.properties;
         new maplibregl.Popup({ offset: 22, maxWidth: "290px" })
           .setLngLat(feature.geometry.coordinates)
-          .setHTML(`<article class="map-info-window"><img src="${place.image}" alt=""><div><span>${place.category} · ${place.region}</span><h3>${place.name}</h3><p>${place.subtitle}</p><a href="#/destination/${place.id}">View destination →</a></div></article>`)
+          .setHTML(`<article class="map-info-window">${place.image ? `<img src="${place.image}" alt="">` : ""}<div><span>${place.category} · ${place.region}</span><h3>${place.name}</h3><p>${place.era || place.subtitle}</p>${place.kind === "heritage" ? `<p>${place.description}</p><small>Map heritage entry</small>` : `<a href="#/destination/${place.id}">View full details →</a>`}</div></article>`)
           .addTo(map);
       });
       let hoveredPlaceId = null;
       map.on("mousemove", event => {
-        const features = map.queryRenderedFeatures(event.point, { layers: ["destination-labels", "destination-points"] });
+        const features = map.queryRenderedFeatures(event.point, { layers: ["destination-labels", "destination-points", "heritage-points"] });
         const nextId = features[0]?.id ?? null;
         if (hoveredPlaceId !== null && hoveredPlaceId !== nextId) {
           map.setFeatureState({ source: "destinations", id: hoveredPlaceId }, { hover: false });
@@ -487,7 +531,8 @@ async function initInteractiveMap(items) {
 
 function mapPage() {
   const mapItems = filteredMapItems();
-  return `${nav("map")}<main id="main"><div class="map-layout"><aside class="map-panel"><span class="eyebrow">Explore from north to south</span><h1>Jordan on the Map</h1><p class="map-intro">Find ${destinations.length} remarkable places across the Kingdom, from green northern hills to Aqaba's Red Sea coast.</p><form class="search-box" data-form="map-search"><input name="q" value="${escapeHtml(state.mapQuery)}" placeholder="Search places or regions" aria-label="Search the Jordan map"><span>⌕</span></form><div class="map-results"><strong>${mapItems.length}</strong> ${mapItems.length === 1 ? "place" : "places"} shown</div>${mapItems.length ? mapItems.map(item => `<a class="map-card" href="#/destination/${item.id}"><span class="map-card-number">${item.mapNumber}</span><img src="${item.image}" alt="${item.name}"><div><h3>${item.name}</h3><p>${item.region} · ${item.category}</p></div></a>`).join("") : `<div class="map-empty"><strong>No places found</strong><p>Try another city, region, or interest.</p></div>`}</aside><section class="map-canvas" aria-label="Interactive map showing places across Jordan"><div id="interactive-map" class="interactive-map"></div><div id="map-status" class="map-status"><span class="spinner" aria-hidden="true"></span><strong>Loading the map…</strong></div></section></div></main>`;
+  const totalPlaces = destinations.length + heritageSites.length;
+  return `${nav("map")}<main id="main"><div class="map-layout"><aside class="map-panel"><span class="eyebrow">Explore from north to south</span><h1>Jordan on the Map</h1><p class="map-intro">Explore ${totalPlaces} destinations and documented heritage sites across the Kingdom. Gold points are archaeological map entries; numbered points open full destination pages.</p><form class="search-box" data-form="map-search"><input name="q" value="${escapeHtml(state.mapQuery)}" placeholder="Search places, eras, or regions" aria-label="Search the Jordan map"><span>⌕</span></form><div class="map-results"><strong>${mapItems.length}</strong> ${mapItems.length === 1 ? "place" : "places"} shown</div>${mapItems.length ? mapItems.map(item => item.hasPage ? `<a class="map-card" href="#/destination/${item.id}"><span class="map-card-number">${item.mapNumber}</span><img src="${item.image}" alt="${item.name}"><div><h3>${item.name}</h3><p>${item.region} · ${item.category}</p></div></a>` : `<button type="button" class="map-card map-card-heritage" data-map-focus="${item.id}" data-lat="${item.lat}" data-lng="${item.lng}"><span class="map-card-number">⌖</span><span class="map-card-placeholder">✦</span><div><h3>${item.name}</h3><p>${item.region} · ${item.era}</p></div></button>`).join("") : `<div class="map-empty"><strong>No places found</strong><p>Try another city, period, or interest.</p></div>`}</aside><section class="map-canvas" aria-label="Interactive map showing places across Jordan"><div id="interactive-map" class="interactive-map"></div><div id="map-status" class="map-status"><span class="spinner" aria-hidden="true"></span><strong>Loading the map…</strong></div></section></div></main>`;
 }
 
 const AI_INTERESTS = ["History", "Nature", "Adventure", "Culture", "Water", "Wellness"];
@@ -629,6 +674,10 @@ const DESTINATION_ALIASES = {
   petra: ["petra", "البتراء"], "wadi-rum": ["wadi rum", "وادي رم"], "dead-sea": ["dead sea", "البحر الميت"],
   jerash: ["jerash", "جرش"], aqaba: ["aqaba", "العقبة"], amman: ["amman", "عمان", "عمّان"],
   "amman-roman-theatre": ["amman roman theatre", "roman theatre", "roman theater", "المدرج الروماني", "المسرح الروماني"],
+  "amman-citadel": ["amman citadel", "citadel", "jabal al qala", "جبل القلعة", "قلعة عمان"],
+  "umm-ar-rasas": ["umm ar-rasas", "umm er-rasas", "ام الرصاص", "أم الرصاص"],
+  "quseir-amra": ["quseir amra", "qasr amra", "قصير عمرة", "قصر عمرة"],
+  "al-maghtas": ["al-maghtas", "baptism site", "bethany beyond the jordan", "المغطس", "موقع المعمودية"],
   madaba: ["madaba", "مادبا"], "mount-nebo": ["mount nebo", "جبل نيبو"], "wadi-mujib": ["wadi mujib", "وادي الموجب"],
   karak: ["karak", "الكرك"], dana: ["dana", "ضانا"], azraq: ["azraq", "الأزرق", "الازرق"],
   shobak: ["shobak", "الشوبك"], ajloun: ["ajloun", "عجلون"], "umm-qais": ["umm qais", "ام قيس", "أم قيس"],
@@ -645,6 +694,10 @@ const ARABIC_DESTINATION_GUIDE = {
   aqaba: { name: "العقبة", description: "مدينة الأردن الساحلية على البحر الأحمر، تجمع الشعاب المرجانية والمياه الدافئة والأجواء المسائية الهادئة.", highlights: ["الغوص والسنوركل قرب الشعاب", "الشاطئ والممشى والأجواء الدافئة", "سهولة دمجها مع وادي رم"], tip: "اختر نشاطًا يحافظ على الشعاب ولا تلمس المرجان، وتحقق من حالة البحر قبل النشاط." },
   amman: { name: "عمّان", description: "عاصمة مبنية على التلال تجمع آثار القلعة والمدرج الروماني وأسواق وسط البلد مع أحياء فنية ومقاهٍ وثقافة معاصرة.", highlights: ["إطلالة القلعة على تلال المدينة", "طعام وأسواق وسط البلد", "أحياء اللويبدة وجبل عمّان الإبداعية"], tip: "رتب يومك حسب الأحياء لأن المدينة جبلية والمسافات القصيرة قد تستغرق وقتًا." },
   "amman-roman-theatre": { name: "المدرّج الروماني في عمّان", description: "مسرح روماني ضخم بُني في القرن الثاني الميلادي في عهد الإمبراطور أنطونينوس بيوس، عندما كانت عمّان تُعرف باسم فيلادلفيا. كان مخصصًا للعروض المسرحية والموسيقية ويتسع لنحو 6,000 متفرج.", highlights: ["المدرجات الحجرية المرتفعة وصوتيات المسرح", "الإطلالة على ساحة الهاشمي ووسط البلد", "متحف الحياة الشعبية ومتحف الفولكلور في أجزائه السفلية"], tip: "ادمجه مع الأوديون وسبيل الحوريات وأسواق وسط البلد وجبل القلعة، وارتدِ حذاءً ثابتًا لأن الدرج مرتفع ومكشوف للشمس." },
+  "amman-citadel": { name: "جبل القلعة", description: "تل أثري يطل على وسط عمّان ويعرض طبقات متواصلة من العصر البرونزي والعموني والروماني والبيزنطي والإسلامي.", highlights: ["معبد هرقل والقصر الأموي", "الإطلالة على وسط البلد والمدرج الروماني", "متحف الآثار الأردني والكنيسة البيزنطية"], tip: "زره صباحًا أو قرب الغروب، وادمجه مع المدرج الروماني ووسط البلد في اليوم نفسه." },
+  "umm-ar-rasas": { name: "أم الرصاص", description: "موقع تراث عالمي بدأ كمعسكر روماني ثم تطور إلى مدينة تضم ست عشرة كنيسة وفسيفساء بيزنطية وآثارًا إسلامية مبكرة.", highlights: ["فسيفساء كنيسة القديس اسطفانوس", "المعسكر الروماني والكنائس", "برج الناسك الفريد"], tip: "الموقع مكشوف خارج منطقة الفسيفساء؛ احمل الماء والحماية من الشمس وادمجه مع مادبا." },
+  "quseir-amra": { name: "قصير عمرة", description: "مجمع أموي من أوائل القرن الثامن يشتهر برسومات جدارية نادرة وقبة فلكية داخل غرف الاستحمام.", highlights: ["الرسومات الأموية التصويرية", "قبة الأبراج الفلكية", "نظام البئر والحمام في قلب البادية"], tip: "ادمجه مع قصر الخرّانة وقلعة الأزرق، واترك عينيك تتكيف مع الإضاءة الخافتة في الداخل." },
+  "al-maghtas": { name: "المغطس", description: "موقع تراث عالمي على الضفة الشرقية لنهر الأردن يرتبط بتقليد معمودية السيد المسيح ويضم آثار كنائس وبرك تعميد ومسارات حج.", highlights: ["بقايا الكنائس وبرك التعميد", "تل الخرار ومسار الحجاج", "المشهد الهادئ قرب نهر الأردن"], tip: "الدخول منظم عبر مركز الزوار؛ ارتدِ لباسًا مناسبًا وتحقق من ترتيبات الزيارة الحالية قبل الذهاب." },
   madaba: { name: "مادبا", description: "مدينة معروفة بفسيفسائها البيزنطية، وأشهرها خريطة الأراضي المقدسة، مع شوارع قديمة ومجتمع محلي متنوع.", highlights: ["خريطة مادبا الفسيفسائية", "الكنائس والمواقع الأثرية", "الأسواق والمطاعم المحلية"], tip: "ادمجها مع جبل نيبو في نصف يوم، وتحقق من مواعيد دخول الكنائس." },
   "mount-nebo": { name: "جبل نيبو", description: "قمة تاريخية ودينية تطل على وادي الأردن وتضم بقايا كنيسة وفسيفساء جميلة.", highlights: ["الإطلالة الواسعة على الأغوار", "الفسيفساء والبقايا الدينية", "قربه من مادبا"], tip: "الرؤية تعتمد على الطقس؛ زره في يوم صافٍ وادمجه مع مادبا." },
   "wadi-mujib": { name: "وادي الموجب", description: "وادي عميق قرب البحر الميت يشتهر بمسارات مائية موسمية بين جدران صخرية شاهقة.", highlights: ["المشي المائي داخل السيق", "المنحدرات والمناظر الدرامية", "مغامرة قريبة من البحر الميت"], tip: "فتح المسارات وشروط العمر تعتمد على الموسم والطقس؛ تحقق من المحمية قبل الذهاب." },
@@ -929,6 +982,12 @@ async function logout() {
 }
 
 app.addEventListener("click", async event => {
+  const mapFocus = event.target.closest("[data-map-focus]");
+  if (mapFocus && activeMap) {
+    activeMap.flyTo({ center: [Number(mapFocus.dataset.lng), Number(mapFocus.dataset.lat)], zoom: 11.5, essential: true });
+    document.querySelector("#interactive-map")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
   const galleryImage = event.target.closest("[data-gallery-image]");
   if (galleryImage) {
     openGalleryImage(galleryImage.dataset.galleryImage, galleryImage.dataset.galleryLabel);
