@@ -100,6 +100,39 @@ const activities = [
   { id: "amman-food", name: "Amman Food Walk", type: "Culture", destination: "Amman", image: IMG.amman, icon: "◌", duration: "3 hours", description: "Taste falafel, knafeh, coffee, and the energy of downtown Amman." }
 ];
 
+const ACTIVITY_IDEAS = {
+  Petra: [
+    { icon: "⌁", name: "Climb to the Monastery", description: "Follow the rock-cut route beyond the city centre to one of Petra’s most monumental façades and wide mountain views." },
+    { icon: "◉", name: "Explore Petra’s viewpoints", description: "Walk beyond the Treasury to royal tombs, high places, and quieter overlooks that reveal the scale of the Nabataean city." },
+    { icon: "✦", name: "Visit Little Petra", description: "Pair the main site with Siq al-Barid’s carved rooms, cisterns, and more intimate Nabataean landscape." }
+  ],
+  "Wadi Rum": [
+    { icon: "⌖", name: "Desert jeep route", description: "Cross broad valleys between sandstone formations, inscriptions, arches, and viewpoints with a local desert guide." },
+    { icon: "⌁", name: "Short desert hikes", description: "Walk through a canyon or toward a natural bridge, choosing a route that matches the weather and your experience." },
+    { icon: "☾", name: "Stargazing & camp stories", description: "Stay after sunset for a dark sky, Bedouin hospitality, tea, and the desert’s quiet evening atmosphere." }
+  ],
+  Aqaba: [
+    { icon: "⚓", name: "Snorkel the coral coast", description: "See reef life close to shore with a responsible operator while keeping a safe distance from coral." },
+    { icon: "≈", name: "Boat across the Gulf", description: "Enjoy Aqaba’s mountain-framed coastline from the water, with swimming stops when conditions allow." },
+    { icon: "⌖", name: "Walk through old Aqaba", description: "Combine the waterfront with Aqaba Castle and the remains of early Islamic Ayla for a deeper city story." }
+  ],
+  "Dana Biosphere": [
+    { icon: "⌁", name: "Hike the reserve trails", description: "Choose a short village walk or a longer guided canyon route through Dana’s changing ecosystems." },
+    { icon: "◌", name: "Explore Dana Village", description: "Slow down among stone houses, viewpoints, and community projects at the edge of the great valley." },
+    { icon: "♢", name: "Watch birds & wildlife", description: "Look for mountain and desert species across the reserve’s varied elevations, especially in the cooler hours." }
+  ],
+  Jerash: [
+    { icon: "⌘", name: "Walk the Roman city", description: "Trace Hadrian’s Arch, the Oval Plaza, Cardo, temples, and gates to understand the ancient city’s plan." },
+    { icon: "◖", name: "Test the theatre acoustics", description: "Climb carefully through the seating and experience the remarkable sound and views of Jerash’s theatres." },
+    { icon: "✦", name: "Discover later layers", description: "Look beyond the columns for churches, mosaics, homes, and details that show how Jerash changed over time." }
+  ],
+  Amman: [
+    { icon: "⌖", name: "Citadel & downtown walk", description: "Connect the hilltop Citadel, Roman Theatre, markets, and historic streets in one layered city route." },
+    { icon: "◌", name: "Taste local favourites", description: "Try falafel, hummus, seasonal street snacks, Arabic coffee, and knafeh while exploring central Amman." },
+    { icon: "✦", name: "Galleries & creative districts", description: "Spend time around Jabal Amman or Jabal al-Weibdeh for independent galleries, cafés, design, and city views." }
+  ]
+};
+
 const app = document.querySelector("#app");
 const modalRoot = document.querySelector("#modal-root");
 const toastRoot = document.querySelector("#toast-root");
@@ -111,6 +144,7 @@ const state = {
   pendingAction: sessionStorage.getItem("bj-pending") || "",
   firebase: null,
   activeFilter: "All",
+  activityFilter: "All",
   query: "",
   mapQuery: "",
   aiPlan: null,
@@ -276,7 +310,7 @@ function destinationCard(item, gem = false) {
 }
 
 function activityCard(item) {
-  return `<article class="destination-card"><div class="card-image"><a href="#/activity/${item.id}"><img src="${item.image}" alt="${item.name} in ${item.destination}" loading="lazy"></a></div><div class="card-body"><span class="eyebrow">${item.type} · ${item.duration}</span><div class="card-title-row"><h3><a href="#/activity/${item.id}">${item.name}</a></h3><span class="activity-icon">${item.icon}</span></div><p>${item.description}</p></div></article>`;
+  return `<article class="destination-card"><div class="card-image"><a href="#/activity/${item.id}"><img src="${item.image}" alt="${item.name} in ${item.destination}" loading="lazy"></a>${favoriteButton(item)}</div><div class="card-body"><span class="eyebrow">${item.type} · ${item.duration}</span><div class="card-title-row"><h3><a href="#/activity/${item.id}">${item.name}</a></h3><span class="activity-icon">${item.icon}</span></div><p>${item.description}</p></div></article>`;
 }
 
 function pageHero(eyebrow, title, copy, image) {
@@ -306,7 +340,9 @@ function hiddenGemsPage() {
 }
 
 function activitiesPage() {
-  return `${nav("activities")}<main id="main">${pageHero("Move · Taste · Wonder", "Activities & Experiences", "Choose the way you want to meet Jordan—from ancient stories and mountain trails to coral reefs and desert skies.", IMG.wadiRum)}<section class="section"><div class="container"><div class="filters" style="margin-bottom:36px"><button class="chip active">All Experiences</button><button class="chip">Adventure</button><button class="chip">Culture</button><button class="chip">Nature</button><button class="chip">Water</button></div><div class="grid cards-3">${activities.map(activityCard).join("")}</div></div></section></main>${footer()}`;
+  const categories = ["All", "Adventure", "Culture", "Nature", "Water", "History"];
+  const filtered = activities.filter(item => state.activityFilter === "All" || item.type === state.activityFilter);
+  return `${nav("activities")}<main id="main">${pageHero("Move · Taste · Wonder", "Activities & Experiences", "Choose the way you want to meet Jordan—from ancient stories and mountain trails to coral reefs and desert skies.", IMG.wadiRum)}<section class="section"><div class="container"><div class="filters" style="margin-bottom:24px">${categories.map(category => `<button class="chip ${state.activityFilter === category ? "active" : ""}" data-activity-filter="${category}">${category === "All" ? "All Experiences" : category}</button>`).join("")}</div><p class="results-copy">${filtered.length} ${filtered.length === 1 ? "experience" : "experiences"} found</p>${filtered.length ? `<div class="grid cards-3">${filtered.map(activityCard).join("")}</div>` : `<div class="empty-state"><h2>No experiences in this category yet</h2><p>Choose another category to keep exploring Jordan.</p></div>`}</div></section></main>${footer()}`;
 }
 
 function destinationDetailPage(id) {
@@ -363,7 +399,9 @@ function heritageDetailPage(id) {
 function activityDetailPage(id) {
   const item = findActivity(id);
   const destination = destinations.find(x => x.name === item.destination) || destinations[0];
-  return `${nav("activities")}<main id="main"><section class="detail-hero" style="--detail-image:url('${item.image}')"><div class="container"><span class="tag">${item.type} Experience</span></div></section><section class="section"><div class="container detail-layout"><article><span class="eyebrow">${item.destination} · ${item.duration}</span><h1 style="font-size:clamp(2.6rem,4vw,4rem)">${item.name}</h1><p class="detail-copy">${item.description} This experience is presented without invented prices or access rules; confirm current details with your chosen local operator before visiting.</p><div class="info-grid"><div class="info-box"><strong>Duration</strong>${item.duration}</div><div class="info-box"><strong>Experience</strong>${item.type}</div><div class="info-box"><strong>Location</strong>${item.destination}</div></div><h2 style="font-size:2rem;margin-top:44px">What makes it special</h2><ul class="highlights"><li>A memorable perspective on Jordan’s landscape and culture</li><li>Suitable for travelers seeking authentic local experiences</li><li>Simple to connect with the rest of your itinerary</li></ul><h2 style="font-size:2rem;margin-top:44px">Related Destination</h2>${destinationCard(destination, destination.hidden)}</article><aside class="booking-box"><span class="eyebrow">Experience Jordan</span><h3>Add this experience</h3><p>Include ${item.name} alongside ${item.destination} in your itinerary.</p><div class="booking-actions"><button class="btn primary wide" data-add-trip="${destination.id}">Add to Trip Planner</button><a class="btn outline wide" href="#/destination/${destination.id}">View ${destination.name}</a></div></aside></div></section></main>${footer()}`;
+  const ideas = ACTIVITY_IDEAS[item.destination] || [];
+  const related = activities.filter(activity => activity.id !== item.id).slice(0, 3);
+  return `${nav("activities")}<main id="main" class="destination-experience"><section class="detail-hero" style="--detail-image:url('${item.image}')"><div class="container"><div class="detail-hero-copy"><span class="tag">${item.type} Experience</span><span class="eyebrow">${item.destination} · ${item.duration}</span><h1>${item.name}</h1><p>${item.description}</p></div></div></section><section class="place-intro"><div class="container detail-layout"><article><span class="eyebrow">Experience the place</span><h2>Make more of your time in ${item.destination}</h2><p class="detail-lead">${item.description}</p><p class="detail-copy">Use this experience as the starting point for a fuller day in the region. The ideas below help you combine landscape, local culture, and history without turning the visit into a rushed checklist.</p><div class="info-grid"><div class="info-box"><span>01</span><strong>Duration</strong>${item.duration}</div><div class="info-box"><span>02</span><strong>Experience</strong>${item.type}</div><div class="info-box"><span>03</span><strong>Location</strong>${item.destination}</div></div><section class="place-section"><div class="place-section-head"><div><span class="eyebrow">More to do nearby</span><h2>Activities in ${item.destination}</h2></div><p>Choose what fits your pace, interests, weather, and current local access.</p></div><div class="activity-ideas-grid">${ideas.map(idea => `<article class="activity-idea"><span>${idea.icon}</span><div><h3>${idea.name}</h3><p>${idea.description}</p></div></article>`).join("")}</div></section><section class="local-note"><span class="local-note-icon">⌖</span><div><span class="eyebrow">Before you go</span><h3>Confirm the current details</h3><p>Prices, schedules, weather, trail access, guide requirements, and sea conditions can change. Check with the site or a trusted local operator before visiting.</p></div></section><section class="place-section"><div class="place-section-head"><div><span class="eyebrow">Keep discovering</span><h2>More Jordan experiences</h2></div><a class="text-link" href="#/activities">See all experiences →</a></div><div class="nearby-row">${related.map(activity => `<a class="mini-card" href="#/activity/${activity.id}"><img src="${activity.image}" alt="${activity.name}" loading="lazy"><div><span class="eyebrow">${activity.type}</span><strong>${activity.name}</strong><p>${activity.destination} · ${activity.duration}</p></div></a>`).join("")}</div></section></article><aside class="booking-box place-booking"><span class="ai-match-badge">${item.icon} ${item.type} experience</span><h3>Save ${item.name}</h3><p>Keep this experience in your favorites or add ${destination.name} to your Jordan itinerary.</p><div class="match-tags"><span>${item.type}</span><span>${item.duration}</span><span>${item.destination}</span></div><div class="booking-actions"><button class="btn primary wide" data-add-trip="${destination.id}">Add ${destination.name} to Trip</button><button class="btn outline wide" data-favorite="${item.id}">${state.favorites.includes(item.id) ? "♥ Saved" : "♡ Save Experience"}</button><a class="btn ghost wide" href="#/destination/${destination.id}">View ${destination.name}</a></div></aside></div></section></main>${footer()}`;
 }
 
 let mapLibrePromise;
@@ -869,8 +907,10 @@ function itineraryPage() {
 }
 
 function favoritesPage() {
-  const saved = destinations.filter(x => state.favorites.includes(x.id));
-  return `${nav("favorites")}<main id="main">${pageHero("Your Collection", "Favorite Places", "Keep the places that inspire you together, then turn them into a journey.", IMG.deadSea)}<section class="section"><div class="container">${saved.length ? `<div class="section-head"><div><span class="eyebrow">${saved.length} Saved Places</span><h2>Ready when you are</h2></div><a class="btn primary" href="#/trip-planner">Plan from Favorites</a></div><div class="grid cards-3">${saved.map(x => destinationCard(x, x.hidden)).join("")}</div>` : `<div class="empty-state"><h2>Your favorites are waiting</h2><p>Save destinations and hidden gems to find them quickly here.</p><a class="btn primary" href="#/explore">Explore Jordan</a></div>`}</div></section></main>${footer()}`;
+  const savedPlaces = destinations.filter(item => state.favorites.includes(item.id));
+  const savedActivities = activities.filter(item => state.favorites.includes(item.id));
+  const total = savedPlaces.length + savedActivities.length;
+  return `${nav("favorites")}<main id="main">${pageHero("Your Collection", "Favorites", "Keep inspiring places and experiences together, then turn them into a journey.", IMG.deadSea)}<section class="section"><div class="container">${total ? `<div class="section-head"><div><span class="eyebrow">${total} saved ${total === 1 ? "item" : "items"}</span><h2>Ready when you are</h2></div><a class="btn primary" href="#/trip-planner">Plan from Favorites</a></div>${savedPlaces.length ? `<h3 class="favorites-heading">Places</h3><div class="grid cards-3">${savedPlaces.map(item => destinationCard(item, item.hidden)).join("")}</div>` : ""}${savedActivities.length ? `<h3 class="favorites-heading ${savedPlaces.length ? "favorites-heading-spaced" : ""}">Experiences</h3><div class="grid cards-3">${savedActivities.map(activityCard).join("")}</div>` : ""}` : `<div class="empty-state"><h2>Your favorites are waiting</h2><p>Save destinations, hidden gems, and activities to find them quickly here.</p><a class="btn primary" href="#/activities">Explore Experiences</a></div>`}</div></section></main>${footer()}`;
 }
 
 function authPage(mode) {
@@ -943,7 +983,8 @@ async function toggleFavorite(id) {
   state.favorites = state.favorites.includes(id) ? state.favorites.filter(item => item !== id) : [...state.favorites, id];
   await syncCloudData();
   render({ preserveScroll: true });
-  toast(state.favorites.includes(id) ? `${findDestination(id).name} saved to favorites.` : `${findDestination(id).name} removed from favorites.`);
+  const item = destinations.find(place => place.id === id) || activities.find(activity => activity.id === id);
+  toast(state.favorites.includes(id) ? `${item?.name || "Item"} saved to favorites.` : `${item?.name || "Item"} removed from favorites.`);
 }
 
 function openAddTripModal(id) {
@@ -1003,10 +1044,12 @@ async function authenticate(form) {
     sessionStorage.removeItem("bj-pending");
     if (pending?.startsWith("favorite:")) {
       const id = pending.split(":")[1];
+      const activity = activities.find(item => item.id === id);
+      const item = activity || destinations.find(place => place.id === id);
       if (!state.favorites.includes(id)) state.favorites.push(id);
       await syncCloudData();
-      location.hash = `#/destination/${id}`;
-      setTimeout(() => toast(`${findDestination(id).name} saved to favorites.`), 40);
+      location.hash = activity ? `#/activity/${id}` : `#/destination/${id}`;
+      setTimeout(() => toast(`${item?.name || "Item"} saved to favorites.`), 40);
     } else if (pending?.startsWith("trip:")) {
       const id = pending.split(":")[1];
       location.hash = `#/destination/${id}`;
@@ -1070,6 +1113,12 @@ app.addEventListener("click", async event => {
   if (filter) {
     state.activeFilter = filter.dataset.filter;
     render();
+    return;
+  }
+  const activityFilter = event.target.closest("[data-activity-filter]");
+  if (activityFilter) {
+    state.activityFilter = activityFilter.dataset.activityFilter;
+    render({ preserveScroll: true });
     return;
   }
   const interest = event.target.closest("[data-interest]");
