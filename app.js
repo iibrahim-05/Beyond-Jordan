@@ -143,10 +143,43 @@ const app = document.querySelector("#app");
 const modalRoot = document.querySelector("#modal-root");
 const toastRoot = document.querySelector("#toast-root");
 
+const DEFAULT_TRIP = { name: "My Jordan Adventure", days: 7, interests: ["History", "Nature"], stops: [], schedule: {}, savedAt: null };
+
+function normalizeTrip(value = {}) {
+  const days = Math.min(30, Math.max(1, Number(value.days) || DEFAULT_TRIP.days));
+  const stops = [...new Set(Array.isArray(value.stops) ? value.stops : [])].filter(id => destinations.some(item => item.id === id));
+  const schedule = {};
+  if (value.schedule && typeof value.schedule === "object") {
+    Object.entries(value.schedule).forEach(([day, entries]) => {
+      const dayNumber = Number(day);
+      if (dayNumber < 1 || dayNumber > days || !Array.isArray(entries)) return;
+      schedule[dayNumber] = entries.map(entry => typeof entry === "string" ? { id: entry, note: "" } : entry)
+        .filter(entry => entry?.id && stops.includes(entry.id))
+        .map(entry => ({ id: entry.id, note: String(entry.note || "") }));
+    });
+  }
+  if (!Object.values(schedule).some(entries => entries.length) && stops.length) {
+    stops.forEach((id, index) => {
+      const day = Math.min(days, index + 1);
+      (schedule[day] ||= []).push({ id, note: "" });
+    });
+  }
+  return {
+    ...DEFAULT_TRIP,
+    ...value,
+    name: String(value.name || DEFAULT_TRIP.name),
+    days,
+    interests: Array.isArray(value.interests) ? value.interests : [...DEFAULT_TRIP.interests],
+    stops,
+    schedule,
+    savedAt: value.savedAt || null
+  };
+}
+
 const state = {
   user: JSON.parse(localStorage.getItem("bj-user") || "null"),
   favorites: JSON.parse(localStorage.getItem("bj-favorites") || "[]"),
-  trip: JSON.parse(localStorage.getItem("bj-trip") || JSON.stringify({ name: "My Jordan Adventure", days: 7, interests: ["History", "Nature"], stops: ["amman", "jerash", "petra", "wadi-rum", "dead-sea"] })),
+  trip: normalizeTrip(JSON.parse(localStorage.getItem("bj-trip") || JSON.stringify(DEFAULT_TRIP))),
   pendingAction: sessionStorage.getItem("bj-pending") || "",
   firebase: null,
   activeFilter: "All",
@@ -226,7 +259,7 @@ async function loadCloudData() {
   if (snapshot.exists()) {
     const data = snapshot.data();
     state.favorites = data.favorites || state.favorites;
-    state.trip = data.trip || state.trip;
+    state.trip = normalizeTrip(data.trip || state.trip);
     storeLocal();
   }
 }
@@ -896,15 +929,18 @@ function plannerSidebar(active = 1) {
 }
 
 function tripPlannerPage() {
-  return `${nav("trip-planner")}<main id="main">${pageHero("Shape Your Journey", "Trip Planner", "Choose your pace and interests, then adjust a simple day-by-day route.", IMG.wadiRum)}<section class="section"><div class="container planner-shell">${plannerSidebar(3)}<div class="planner-main"><span class="eyebrow">Your preferences</span><h2 style="font-size:2.2rem">Plan your Jordan adventure</h2><div class="form-grid"><div class="field"><label for="trip-name">Trip name</label><input id="trip-name" value="${escapeHtml(state.trip.name)}"></div><div class="field"><label for="trip-days">Trip duration</label><select id="trip-days">${[3,5,7,10,14].map(d => `<option value="${d}" ${state.trip.days === d ? "selected" : ""}>${d} days</option>`).join("")}</select></div></div><h3 style="margin-top:32px">What interests you?</h3><div class="interest-grid">${["History", "Nature", "Adventure", "Culture", "Water", "Wellness"].map(x => `<button class="interest ${state.trip.interests.includes(x) ? "selected" : ""}" data-interest="${x}"><strong>${x}</strong><br><small>${({History:"Ancient cities & stories",Nature:"Trails & reserves",Adventure:"Desert & canyon",Culture:"Food & local life",Water:"Sea & springs",Wellness:"Slow, restorative days"})[x]}</small></button>`).join("")}</div><h3 style="margin-top:32px">Places in your trip</h3><div class="grid cards-3">${destinations.filter(x => state.trip.stops.includes(x.id)).slice(0,6).map(x => destinationCard(x, x.hidden)).join("")}</div><div class="planner-footer"><a class="btn outline" href="#/explore">Add more places</a><button class="btn primary" data-action="build-itinerary">Build Itinerary →</button></div></div></div></section></main>${footer()}`;
+  const selectedPlaces = destinations.filter(x => state.trip.stops.includes(x.id));
+  return `${nav("trip-planner")}<main id="main">${pageHero("Shape Your Journey", "Trip Planner", "Choose your pace and interests, then adjust a simple day-by-day route.", IMG.wadiRum)}<section class="section"><div class="container planner-shell">${plannerSidebar(3)}<div class="planner-main"><span class="eyebrow">Your preferences</span><h2 style="font-size:2.2rem">Plan your Jordan adventure</h2><div class="form-grid"><div class="field"><label for="trip-name">Trip name</label><input id="trip-name" value="${escapeHtml(state.trip.name)}"></div><div class="field"><label for="trip-days">Trip duration</label><select id="trip-days">${[3,5,7,10,14].map(d => `<option value="${d}" ${state.trip.days === d ? "selected" : ""}>${d} days</option>`).join("")}</select></div></div><h3 style="margin-top:32px">What interests you?</h3><div class="interest-grid">${["History", "Nature", "Adventure", "Culture", "Water", "Wellness"].map(x => `<button class="interest ${state.trip.interests.includes(x) ? "selected" : ""}" data-interest="${x}"><strong>${x}</strong><br><small>${({History:"Ancient cities & stories",Nature:"Trails & reserves",Adventure:"Desert & canyon",Culture:"Food & local life",Water:"Sea & springs",Wellness:"Slow, restorative days"})[x]}</small></button>`).join("")}</div><h3 style="margin-top:32px">Places in your trip</h3>${selectedPlaces.length ? `<div class="grid cards-3">${selectedPlaces.slice(0,6).map(x => destinationCard(x, x.hidden)).join("")}</div>` : `<div class="planner-empty"><span>⌖</span><div><h3>No places added yet</h3><p>Explore Jordan and add the destinations you want to include in this trip.</p></div><a class="btn outline" href="#/explore">Choose Places</a></div>`}<div class="planner-footer"><a class="btn outline" href="#/explore">Add more places</a><button class="btn primary" data-action="build-itinerary">Build Itinerary →</button></div></div></div></section></main>${footer()}`;
 }
 
 function itineraryDays() {
-  const stops = state.trip.stops.map(findDestination);
-  return Array.from({ length: Math.min(state.trip.days, 7) }, (_, index) => {
-    const first = stops[index % stops.length];
-    const second = stops[(index + 1) % stops.length];
-    return `<article class="day"><div class="day-head"><div><span class="eyebrow">Day ${index + 1}</span><h3>${first.region}</h3></div><button class="btn ghost" data-action="adjust-day">Adjust day</button></div><div class="stop"><span class="stop-time">09:00</span><img src="${first.image}" alt="${first.name}"><div><h3>${first.name}</h3><p>${first.subtitle}</p></div><button class="icon-btn" aria-label="Drag stop">↕</button></div>${index % 2 === 0 ? `<div class="stop"><span class="stop-time">15:00</span><img src="${second.image}" alt="${second.name}"><div><h3>${second.name}</h3><p>A relaxed second stop with time to explore.</p></div><button class="icon-btn" aria-label="Drag stop">↕</button></div>` : ""}</article>`;
+  return Array.from({ length: state.trip.days }, (_, index) => {
+    const day = index + 1;
+    const entries = state.trip.schedule?.[day] || [];
+    const dayPlaces = entries.map(entry => ({ ...entry, item: destinations.find(place => place.id === entry.id) })).filter(entry => entry.item);
+    const region = [...new Set(dayPlaces.map(entry => entry.item.region))].join(" & ") || "Open day";
+    const stops = dayPlaces.map((entry, stopIndex) => `<div class="stop"><span class="stop-time">${String(9 + stopIndex * 3).padStart(2, "0")}:00</span><img src="${entry.item.image}" alt="${entry.item.name}"><div><h3>${entry.item.name}</h3><p>${escapeHtml(entry.note || entry.item.subtitle)}</p></div><div class="stop-controls"><button class="icon-btn" data-move-stop="up" data-day="${day}" data-stop-index="${stopIndex}" aria-label="Move ${entry.item.name} earlier" ${stopIndex === 0 ? "disabled" : ""}>↑</button><button class="icon-btn" data-move-stop="down" data-day="${day}" data-stop-index="${stopIndex}" aria-label="Move ${entry.item.name} later" ${stopIndex === dayPlaces.length - 1 ? "disabled" : ""}>↓</button></div></div>`).join("");
+    return `<article class="day"><div class="day-head"><div><span class="eyebrow">Day ${day}</span><h3>${escapeHtml(region)}</h3></div><button class="btn ghost" data-adjust-day="${day}">Adjust day</button></div>${stops || `<div class="empty-day"><p>No place planned for this day yet.</p><button class="text-link" data-adjust-day="${day}">Add a place</button></div>`}</article>`;
   }).join("");
 }
 
@@ -926,7 +962,8 @@ function authPage(mode) {
 
 function profilePage() {
   if (!state.user) return authPage("login");
-  return `${nav("profile")}<main id="main">${pageHero("Your Beyond Jordan", "Profile & Saved Trips", "Return to the journeys you’ve planned and the places you love.", IMG.amman)}<section class="section"><div class="container"><div class="profile-head"><div class="profile-user"><span class="avatar">${escapeHtml(state.user.name?.[0]?.toUpperCase() || "T")}</span><div><h2>${escapeHtml(state.user.name || "Traveler")}</h2><p>${escapeHtml(state.user.email || "")}</p></div></div><button class="btn light" data-action="logout">Log Out</button></div><div class="section-head" style="margin-top:64px"><div><span class="eyebrow">Saved Trips</span><h2>Your Journeys</h2></div><a class="btn primary" href="#/trip-planner">Plan New Trip</a></div><div class="grid cards-3"><article class="trip-card"><span class="tag">${state.trip.days} days</span><h3 style="margin-top:18px">${escapeHtml(state.trip.name)}</h3><p>Jordan · ${state.trip.interests.join(" · ")}</p><div class="meta"><span>${state.trip.stops.length} places</span><span>Updated today</span></div><div class="progress"><span style="width:78%"></span></div><a class="btn outline wide" style="margin-top:22px" href="#/itinerary">Open Itinerary</a></article></div></div></section></main>${footer()}`;
+  const savedTrip = state.trip.savedAt;
+  return `${nav("profile")}<main id="main">${pageHero("Your Beyond Jordan", "Profile & Saved Trips", "Return to the journeys you’ve planned and the places you love.", IMG.amman)}<section class="section"><div class="container"><div class="profile-head"><div class="profile-user"><span class="avatar">${escapeHtml(state.user.name?.[0]?.toUpperCase() || "T")}</span><div><h2>${escapeHtml(state.user.name || "Traveler")}</h2><p>${escapeHtml(state.user.email || "")}</p></div></div><button class="btn light" data-action="logout">Log Out</button></div><div class="section-head" style="margin-top:64px"><div><span class="eyebrow">Saved Trips</span><h2>Your Journeys</h2></div>${savedTrip ? `<a class="btn primary" href="#/trip-planner">Plan New Trip</a>` : ""}</div>${savedTrip ? `<div class="grid cards-3"><article class="trip-card"><span class="tag">${state.trip.days} days</span><h3 style="margin-top:18px">${escapeHtml(state.trip.name)}</h3><p>Jordan · ${state.trip.interests.join(" · ")}</p><div class="meta"><span>${state.trip.stops.length} places</span><span>Saved journey</span></div><div class="progress"><span style="width:${Math.min(100, Math.round((state.trip.stops.length / Math.max(1, state.trip.days)) * 100))}%"></span></div><a class="btn outline wide" style="margin-top:22px" href="#/itinerary">Open Itinerary</a></article></div>` : `<div class="profile-trip-empty"><span>✦</span><h3>Start building your Jordan plan</h3><p>You do not have a saved trip yet. Choose your interests, add places, and turn them into a day-by-day journey.</p><a class="btn primary" href="#/trip-planner">Start Building Your Plan →</a></div>`}</div></section></main>${footer()}`;
 }
 
 function notFoundPage() {
@@ -996,9 +1033,12 @@ async function toggleFavorite(id) {
 function openAddTripModal(id) {
   if (!requireAuth(`trip:${id}`)) return;
   const item = findDestination(id);
-  modalRoot.innerHTML = `<div class="modal-backdrop" data-action="close-modal"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" data-modal><div class="modal-head"><h2 id="modal-title">Add to Trip</h2><button class="icon-btn" data-action="close-modal" aria-label="Close">×</button></div><div class="modal-body"><span class="eyebrow">Choose a trip</span><label class="radio-card"><span>${escapeHtml(state.trip.name)}</span><input type="radio" checked name="trip"></label><label class="radio-card"><span>Create New Trip</span><input type="radio" name="trip"></label><h3 style="font-family:'DM Sans',sans-serif;font-size:.9rem;margin-top:26px">Which day?</h3><div class="day-picker">${Array.from({ length: Math.min(state.trip.days, 7) }, (_, i) => `<button class="day-choice ${i === 0 ? "active" : ""}" data-day="${i + 1}"><small>DAY</small><br><strong>${i + 1}</strong></button>`).join("")}</div><div class="field"><label for="trip-note">Notes</label><textarea id="trip-note" placeholder="Add a note about this stop..."></textarea></div></div><div class="modal-foot"><button class="btn ghost" data-action="close-modal">Cancel</button><button class="btn primary" data-confirm-trip="${item.id}">Add to Trip</button></div></section></div>`;
+  modalRoot.innerHTML = `<div class="modal-backdrop" data-action="close-modal"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" data-modal><div class="modal-head"><h2 id="modal-title">Add to Trip</h2><button class="icon-btn" data-action="close-modal" aria-label="Close">×</button></div><div class="modal-body"><span class="eyebrow">Choose a trip</span><label class="radio-card"><span>${escapeHtml(state.trip.name)}</span><input type="radio" checked name="trip-choice" value="existing"></label><label class="radio-card"><span>Create New Trip</span><input type="radio" name="trip-choice" value="new"></label><div class="new-trip-fields" data-new-trip-fields hidden><div class="field"><label for="new-trip-name">Trip name</label><input id="new-trip-name" value="My Jordan Adventure"></div><div class="field"><label for="new-trip-days">Trip duration</label><select id="new-trip-days">${[3,5,7,10,14].map(day => `<option value="${day}" ${day === 7 ? "selected" : ""}>${day} days</option>`).join("")}</select></div></div><h3 class="modal-section-title">Which day?</h3><div class="day-picker" data-day-picker>${dayChoiceButtons(state.trip.days)}</div><div class="field"><label for="trip-note">Notes</label><textarea id="trip-note" placeholder="Add a note about this stop..."></textarea></div></div><div class="modal-foot"><button class="btn ghost" data-action="close-modal">Cancel</button><button class="btn primary" data-confirm-trip="${item.id}">Add to Trip</button></div></section></div>`;
   document.body.classList.add("modal-open");
-  modalRoot.querySelector("[data-modal]").addEventListener("click", event => event.stopPropagation());
+}
+
+function dayChoiceButtons(days, activeDay = 1) {
+  return Array.from({ length: days }, (_, index) => `<button type="button" class="day-choice ${index + 1 === activeDay ? "active" : ""}" data-day="${index + 1}"><small>DAY</small><br><strong>${index + 1}</strong></button>`).join("");
 }
 
 function closeModal() {
@@ -1012,10 +1052,74 @@ function openGalleryImage(src, label) {
 }
 
 async function confirmTrip(id) {
+  const mode = modalRoot.querySelector("input[name='trip-choice']:checked")?.value || "existing";
+  if (mode === "new") {
+    state.trip = normalizeTrip({
+      name: modalRoot.querySelector("#new-trip-name")?.value.trim() || "My Jordan Adventure",
+      days: Number(modalRoot.querySelector("#new-trip-days")?.value || 7),
+      interests: [], stops: [], schedule: {}, savedAt: null
+    });
+  }
+  const day = Number(modalRoot.querySelector("[data-day].active")?.dataset.day || 1);
+  const note = modalRoot.querySelector("#trip-note")?.value.trim() || "";
   if (!state.trip.stops.includes(id)) state.trip.stops.push(id);
+  Object.keys(state.trip.schedule).forEach(key => {
+    state.trip.schedule[key] = state.trip.schedule[key].filter(entry => entry.id !== id);
+  });
+  (state.trip.schedule[day] ||= []).push({ id, note });
   await syncCloudData();
   closeModal();
-  toast(`${findDestination(id).name} added to ${state.trip.name}.`);
+  toast(`${findDestination(id).name} added to day ${day} of ${state.trip.name}.`);
+}
+
+function openAdjustDayModal(day) {
+  const entries = state.trip.schedule?.[day] || [];
+  modalRoot.innerHTML = `<div class="modal-backdrop" data-action="close-modal"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="adjust-day-title" data-modal><div class="modal-head"><div><span class="eyebrow">Itinerary</span><h2 id="adjust-day-title">Adjust Day ${day}</h2></div><button class="icon-btn" data-action="close-modal" aria-label="Close">×</button></div><div class="modal-body"><p class="modal-help">Select the places you want on this day. Selecting a place already assigned elsewhere moves it here.</p>${state.trip.stops.length ? `<div class="day-place-list">${state.trip.stops.map(id => { const item = findDestination(id); return `<label class="day-place-option"><input type="checkbox" value="${id}" ${entries.some(entry => entry.id === id) ? "checked" : ""}><img src="${item.image}" alt=""><span><strong>${item.name}</strong><small>${item.region} · ${item.duration}</small></span></label>`; }).join("")}</div>` : `<div class="modal-empty"><strong>No places in this trip yet</strong><p>Add destinations from Explore before adjusting this day.</p></div>`}</div><div class="modal-foot"><button class="btn ghost" data-action="close-modal">Cancel</button><button class="btn primary" data-save-day="${day}" ${state.trip.stops.length ? "" : "disabled"}>Save Day</button></div></section></div>`;
+  document.body.classList.add("modal-open");
+}
+
+async function saveAdjustedDay(day) {
+  const selectedIds = [...modalRoot.querySelectorAll(".day-place-option input:checked")].map(input => input.value);
+  const previousNotes = new Map(Object.values(state.trip.schedule).flat().map(entry => [entry.id, entry.note || ""]));
+  Object.keys(state.trip.schedule).forEach(key => {
+    state.trip.schedule[key] = state.trip.schedule[key].filter(entry => !selectedIds.includes(entry.id));
+  });
+  state.trip.schedule[day] = selectedIds.map(id => ({ id, note: previousNotes.get(id) || "" }));
+  await syncCloudData();
+  closeModal();
+  render({ preserveScroll: true });
+  toast(`Day ${day} updated.`);
+}
+
+async function moveScheduledStop(day, index, direction) {
+  const entries = [...(state.trip.schedule?.[day] || [])];
+  const target = direction === "up" ? index - 1 : index + 1;
+  if (target < 0 || target >= entries.length) return;
+  [entries[index], entries[target]] = [entries[target], entries[index]];
+  state.trip.schedule[day] = entries;
+  await syncCloudData();
+  render({ preserveScroll: true });
+}
+
+function tripShareText() {
+  const lines = [`${state.trip.name}`, `${state.trip.days}-day journey across Jordan`];
+  for (let day = 1; day <= state.trip.days; day += 1) {
+    const names = (state.trip.schedule?.[day] || []).map(entry => findDestination(entry.id).name);
+    lines.push(`Day ${day}: ${names.length ? names.join(" → ") : "Open day"}`);
+  }
+  return lines.join("\n");
+}
+
+async function shareTripOverview() {
+  const shareData = { title: state.trip.name, text: tripShareText(), url: location.href };
+  try {
+    await navigator.clipboard.writeText(`${shareData.text}\n${shareData.url}`);
+    toast("Trip overview copied to your clipboard.");
+  } catch {
+    modalRoot.innerHTML = `<div class="modal-backdrop" data-action="close-modal"><section class="modal" data-modal><div class="modal-head"><h2>Share Overview</h2><button class="icon-btn" data-action="close-modal">×</button></div><div class="modal-body"><div class="field"><label for="share-overview-text">Copy this trip overview</label><textarea id="share-overview-text" class="share-text" readonly>${escapeHtml(`${shareData.text}\n${shareData.url}`)}</textarea></div></div><div class="modal-foot"><button class="btn primary" data-action="close-modal">Done</button></div></section></div>`;
+    document.body.classList.add("modal-open");
+    modalRoot.querySelector("#share-overview-text")?.select();
+  }
 }
 
 async function authenticate(form) {
@@ -1115,6 +1219,16 @@ app.addEventListener("click", async event => {
     openAddTripModal(addTrip.dataset.addTrip);
     return;
   }
+  const adjustDay = event.target.closest("[data-adjust-day]");
+  if (adjustDay) {
+    openAdjustDayModal(Number(adjustDay.dataset.adjustDay));
+    return;
+  }
+  const moveStop = event.target.closest("[data-move-stop]");
+  if (moveStop) {
+    await moveScheduledStop(Number(moveStop.dataset.day), Number(moveStop.dataset.stopIndex), moveStop.dataset.moveStop);
+    return;
+  }
   const filter = event.target.closest("[data-filter]");
   if (filter) {
     state.activeFilter = filter.dataset.filter;
@@ -1148,34 +1262,42 @@ app.addEventListener("click", async event => {
     render();
   }
   if (action === "build-itinerary") {
-    state.trip.name = document.querySelector("#trip-name")?.value.trim() || state.trip.name;
-    state.trip.days = Number(document.querySelector("#trip-days")?.value || state.trip.days);
+    if (!state.trip.stops.length) {
+      toast("Add at least one place before building your itinerary.");
+      return;
+    }
+    state.trip = normalizeTrip({
+      ...state.trip,
+      name: document.querySelector("#trip-name")?.value.trim() || state.trip.name,
+      days: Number(document.querySelector("#trip-days")?.value || state.trip.days)
+    });
     await syncCloudData();
     location.hash = "#/itinerary";
   }
   if (action === "use-ai-plan" && state.aiPlan) {
     const preferences = state.aiPreferences || { days: 7, interests: ["History", "Culture"] };
-    state.trip = {
+    state.trip = normalizeTrip({
       ...state.trip,
       name: state.aiPlan.title,
       days: preferences.days,
       interests: preferences.interests.length ? preferences.interests : ["History", "Culture"],
-      stops: [...state.aiPlan.stopIds]
-    };
+      stops: [...state.aiPlan.stopIds],
+      schedule: {},
+      savedAt: null
+    });
     await syncCloudData();
     location.hash = "#/itinerary";
     toast("Your AI route is now in the Trip Planner.");
   }
   if (action === "save-trip") {
     if (!requireAuth("save-trip")) return;
+    state.trip.savedAt = new Date().toISOString();
     await syncCloudData();
     toast("Trip saved to your profile.");
   }
   if (action === "share-trip") {
-    await navigator.clipboard?.writeText(location.href);
-    toast("Itinerary link copied.");
+    await shareTripOverview();
   }
-  if (action === "adjust-day") toast("Drag-and-drop controls are ready for itinerary changes.");
   if (action === "logout") await logout();
 });
 
@@ -1185,9 +1307,26 @@ modalRoot.addEventListener("click", async event => {
     modalRoot.querySelectorAll("[data-day]").forEach(node => node.classList.remove("active"));
     day.classList.add("active");
   }
-  if (event.target.closest("[data-action='close-modal']")) closeModal();
+  if (event.target.matches("[data-action='close-modal']")) closeModal();
+  const saveDay = event.target.closest("[data-save-day]");
+  if (saveDay) await saveAdjustedDay(Number(saveDay.dataset.saveDay));
   const confirm = event.target.closest("[data-confirm-trip]");
   if (confirm) await confirmTrip(confirm.dataset.confirmTrip);
+});
+
+modalRoot.addEventListener("change", event => {
+  if (event.target.matches("input[name='trip-choice']")) {
+    const isNew = event.target.value === "new";
+    const fields = modalRoot.querySelector("[data-new-trip-fields]");
+    if (fields) fields.hidden = !isNew;
+    const days = isNew ? Number(modalRoot.querySelector("#new-trip-days")?.value || 7) : state.trip.days;
+    const picker = modalRoot.querySelector("[data-day-picker]");
+    if (picker) picker.innerHTML = dayChoiceButtons(days);
+  }
+  if (event.target.matches("#new-trip-days")) {
+    const picker = modalRoot.querySelector("[data-day-picker]");
+    if (picker) picker.innerHTML = dayChoiceButtons(Number(event.target.value));
+  }
 });
 
 app.addEventListener("submit", event => {
