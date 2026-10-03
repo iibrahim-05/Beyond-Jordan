@@ -280,6 +280,7 @@ function nav(active = "") {
       <a class="brand" href="#/home" aria-label="Beyond Jordan home"><span class="brand-mark">B</span><span>BEYOND JORDAN</span></a>
       <div class="nav-links" id="nav-links">${links.map(([href, label]) => `<a class="nav-link ${href === "ai-guide" ? "ai-nav" : ""} ${active === href ? "active" : ""}" href="#/${href}">${label}</a>`).join("")}</div>
       <div class="nav-actions">
+        <button class="language-btn notranslate" type="button" data-action="language" translate="no" aria-label="Choose website language" aria-expanded="false" aria-controls="language-panel"><span aria-hidden="true">🌐</span><span class="language-btn-label">Language</span></button>
         ${state.user ? `<a href="#/favorites" aria-label="Favorites">♡</a><a class="avatar" href="#/profile" aria-label="Profile">${escapeHtml(state.user.name?.[0]?.toUpperCase() || "T")}</a>` : `<a class="login" href="#/login">Log In</a><a class="btn primary signup" href="#/signup">Sign Up</a>`}
         <button class="menu-btn" data-action="menu" aria-label="Open menu" aria-expanded="false">☰</button>
       </div>
@@ -1311,6 +1312,12 @@ app.addEventListener("click", async event => {
     menu.classList.toggle("open");
     event.target.setAttribute("aria-expanded", String(menu.classList.contains("open")));
   }
+  if (action === "language") {
+    const panel = document.querySelector("#language-panel");
+    const isOpening = panel.hidden;
+    panel.hidden = !isOpening;
+    event.target.closest("[data-action='language']")?.setAttribute("aria-expanded", String(isOpening));
+  }
   if (action === "clear-search") {
     state.query = "";
     state.activeFilter = "All";
@@ -1420,8 +1427,36 @@ app.addEventListener("submit", event => {
   }
 });
 
+const languagePanel = document.querySelector("#language-panel");
+const rtlLanguages = new Set(["ar", "fa", "he", "ur", "ps", "sd", "yi", "ckb"]);
+function connectLanguageSelector() {
+  const selector = document.querySelector("#google_translate_element .goog-te-combo");
+  if (!selector || selector.dataset.beyondJordanReady) return;
+  selector.dataset.beyondJordanReady = "true";
+  const applyLanguage = () => {
+    const language = selector.value || "en";
+    document.documentElement.lang = language;
+    document.documentElement.dir = rtlLanguages.has(language) ? "rtl" : "ltr";
+    languagePanel.hidden = true;
+    document.querySelector("[data-action='language']")?.setAttribute("aria-expanded", "false");
+  };
+  selector.addEventListener("change", applyLanguage);
+  if (selector.value) applyLanguage();
+}
+new MutationObserver(connectLanguageSelector).observe(document.querySelector("#google_translate_element"), { childList: true, subtree: true });
+connectLanguageSelector();
+document.querySelector("#close-language-panel")?.addEventListener("click", () => {
+  languagePanel.hidden = true;
+  document.querySelector("[data-action='language']")?.setAttribute("aria-expanded", "false");
+});
 window.addEventListener("hashchange", render);
-window.addEventListener("keydown", event => { if (event.key === "Escape") closeModal(); });
+window.addEventListener("keydown", event => {
+  if (event.key === "Escape") {
+    closeModal();
+    languagePanel.hidden = true;
+    document.querySelector("[data-action='language']")?.setAttribute("aria-expanded", "false");
+  }
+});
 
 render();
 initFirebase();

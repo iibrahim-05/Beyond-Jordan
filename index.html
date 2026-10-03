@@ -11,13 +11,29 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@^6.11.2/dist/maplibre-gl.css" />
-    <link rel="stylesheet" href="styles.css?v=20261003-trip-place-controls" />
+    <link rel="stylesheet" href="styles.css?v=20261003-language-menu" />
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
+    <aside id="language-panel" class="language-panel notranslate" hidden translate="no" aria-labelledby="language-panel-title">
+      <div class="language-panel-head">
+        <div><span aria-hidden="true">🌐</span><strong id="language-panel-title">Choose language</strong></div>
+        <button id="close-language-panel" class="language-close" type="button" aria-label="Close language menu">×</button>
+      </div>
+      <p>Translate the complete website into your preferred language.</p>
+      <div id="google_translate_element"><span class="language-loading">Loading languages…</span></div>
+      <small>Translation powered by Google Translate.</small>
+    </aside>
     <div id="app"></div>
     <div id="modal-root"></div>
     <div id="toast-root" aria-live="polite"></div>
-    <script type="module" src="app.js?v=20261003-trip-add-refresh"></script>
+    <script>
+      window.googleTranslateElementInit = function () {
+        document.getElementById("google_translate_element").textContent = "";
+        new google.translate.TranslateElement({ pageLanguage: "en", autoDisplay: false }, "google_translate_element");
+      };
+    </script>
+    <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" defer></script>
+    <script type="module" src="app.js?v=20261003-language-menu"></script>
   </body>
 </html>
