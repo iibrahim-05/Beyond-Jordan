@@ -139,6 +139,44 @@ const ACTIVITY_IDEAS = {
   ]
 };
 
+const CATEGORY_ACTIVITY_IDEAS = {
+  History: [
+    { icon: "⌘", name: "Explore the main landmarks", description: "Walk through the site slowly, notice architectural details, and connect the visible remains with the wider history of {place}." },
+    { icon: "◉", name: "Find the best viewpoints", description: "Look for elevated or open viewpoints that reveal how {place} relates to its surrounding landscape." },
+    { icon: "✦", name: "Pair it with nearby heritage", description: "Combine {place} with another nearby museum, old town, archaeological site, or local guide experience." }
+  ],
+  Nature: [
+    { icon: "⌁", name: "Walk a nature trail", description: "Choose a route around {place} that suits the season, weather, and your walking experience." },
+    { icon: "♢", name: "Watch local wildlife", description: "Visit during quieter hours to notice birds, plants, geology, and the changing ecosystems around {place}." },
+    { icon: "◌", name: "Slow down in the landscape", description: "Leave time for photography, viewpoints, and a community-led or locally guided experience near {place}." }
+  ],
+  Adventure: [
+    { icon: "⌁", name: "Choose an active route", description: "Explore {place} on a suitable hiking, canyon, or guided outdoor route after checking current conditions." },
+    { icon: "⌖", name: "Go with local expertise", description: "A trusted local guide can match the route, equipment, and pace to your experience and the weather." },
+    { icon: "◉", name: "Capture the landscape", description: "Plan time for wide viewpoints and quieter stops that show the scale and character of {place}." }
+  ],
+  Culture: [
+    { icon: "◌", name: "Walk the local streets", description: "Explore the historic centre, markets, neighbourhoods, and everyday details that give {place} its character." },
+    { icon: "✦", name: "Meet local makers", description: "Look for community projects, crafts, galleries, or storytellers connected with {place} and its region." },
+    { icon: "☕", name: "Taste the region", description: "Add a local meal, bakery, coffee stop, or seasonal speciality to make your visit to {place} more personal." }
+  ],
+  Water: [
+    { icon: "≈", name: "Enjoy the water responsibly", description: "Choose a safe, locally operated water experience at {place} and check conditions before setting out." },
+    { icon: "⚓", name: "Discover the shoreline", description: "Combine time on the water with a relaxed coastal walk, viewpoints, and the nearby local story." },
+    { icon: "◉", name: "Protect the ecosystem", description: "Keep a respectful distance from wildlife and fragile habitats, and follow local conservation guidance." }
+  ],
+  Wellness: [
+    { icon: "≈", name: "Take a restorative pause", description: "Leave unhurried time to enjoy the natural setting and wellness experience at {place}." },
+    { icon: "◌", name: "Pair rest with a viewpoint", description: "Balance the relaxing part of your visit with a short walk, sunset view, or nearby landscape stop." },
+    { icon: "✦", name: "Plan for comfort", description: "Check current access and facilities, bring what you need, and follow local health and safety guidance." }
+  ]
+};
+
+function activityIdeasFor(item) {
+  const ideas = ACTIVITY_IDEAS[item.name] || CATEGORY_ACTIVITY_IDEAS[item.category] || CATEGORY_ACTIVITY_IDEAS.Culture;
+  return ideas.map(idea => ({ ...idea, description: idea.description.replaceAll("{place}", item.name) }));
+}
+
 const app = document.querySelector("#app");
 const modalRoot = document.querySelector("#modal-root");
 const toastRoot = document.querySelector("#toast-root");
@@ -343,9 +381,15 @@ function travelMatch(item) {
 
 function destinationCard(item, gem = false) {
   const theme = destinationTheme(item);
+  const previewPhotos = galleryFor(item).slice(1, 3);
+  const previewIdeas = activityIdeasFor(item).slice(0, 2);
   return `<article class="${gem ? "gem-card" : "destination-card"}" style="${theme.style}">
     <div class="card-image"><a href="#/destination/${item.id}" aria-label="View ${item.name}"><img src="${item.image}" alt="${item.name}, Jordan" loading="lazy"></a>${favoriteButton(item)}</div>
-    <div class="card-body">${gem ? `<span class="eyebrow">Hidden Gem</span>` : ""}<div class="card-title-row"><h3><a href="#/destination/${item.id}">${item.name}</a></h3><span class="rating">★ ${item.rating}</span></div><p>${item.subtitle}</p>${gem ? `<div class="divider"></div><div class="meta"><span>⌖ ${item.distance}</span><span>${item.region}</span></div>` : ""}</div>
+    <div class="card-body">${gem ? `<span class="eyebrow">Hidden Gem</span>` : ""}<div class="card-title-row"><h3><a href="#/destination/${item.id}">${item.name}</a></h3><span class="rating">★ ${item.rating}</span></div><p>${item.subtitle}</p>${gem ? `<div class="divider"></div><div class="meta"><span>⌖ ${item.distance}</span><span>${item.region}</span></div>` : ""}
+      <div class="card-extra-photos">${previewPhotos.map(photo => `<a href="#/destination/${item.id}" title="${escapeHtml(photo.label)}"><img src="${photo.src}" alt="${escapeHtml(photo.label)}" loading="lazy"></a>`).join("")}</div>
+      <div class="card-things"><strong>Things to do</strong>${previewIdeas.map(idea => `<span>${idea.icon} ${idea.name}</span>`).join("")}</div>
+      <a class="card-details-link" href="#/destination/${item.id}">See photos, activities & details →</a>
+    </div>
   </article>`;
 }
 
@@ -390,6 +434,7 @@ function destinationDetailPage(id) {
   const nearby = destinations.filter(x => x.id !== item.id).map(x => ({ ...x, proximity: Math.hypot(x.lat - item.lat, x.lng - item.lng) })).sort((a, b) => a.proximity - b.proximity).slice(0, 3);
   const content = destinationContent(item);
   const gallery = galleryFor(item);
+  const ideas = activityIdeasFor(item);
   const theme = destinationTheme(item);
   return `${nav("explore")}<main id="main" class="destination-experience" style="${theme.style}">
     <section class="detail-hero" style="--detail-image:url('${item.image}')"><div class="container"><div class="detail-hero-copy"><span class="tag">${item.hidden ? "Hidden Gem" : "Iconic Destination"}</span><span class="eyebrow">${item.region} · Jordan</span><h1>${item.name}</h1><p>${content.title}</p><div class="detail-hero-meta"><span>★ ${item.rating}</span><span>${item.category}</span><span>${item.duration}</span></div></div></div></section>
@@ -397,6 +442,7 @@ function destinationDetailPage(id) {
       <span class="eyebrow">Beyond the postcard</span><h2>${content.title}</h2><p class="detail-lead">${item.description}</p><p class="detail-copy">${content.story}</p>
       <div class="info-grid"><div class="info-box"><span>01</span><strong>Suggested visit</strong>${item.duration}</div><div class="info-box"><span>02</span><strong>Where</strong>${item.region}, Jordan</div><div class="info-box"><span>03</span><strong>Travel mood</strong>${item.category}</div></div>
       <section class="place-section"><div class="place-section-head"><div><span class="eyebrow">A visual preview</span><h2>The place & region in frames</h2></div><p>Open any image for a closer look. Nearby regional photographs are labeled clearly.</p></div><div class="place-gallery">${gallery.map((photo, index) => `<button class="gallery-tile gallery-tile-${index + 1}" data-gallery-image="${escapeHtml(photo.src)}" data-gallery-label="${escapeHtml(photo.label)}" aria-label="Open ${escapeHtml(photo.label)}"><img src="${photo.src}" alt="${escapeHtml(photo.label)}" loading="lazy"><span>${escapeHtml(photo.label)}</span></button>`).join("")}</div></section>
+      <section class="place-section"><div class="place-section-head"><div><span class="eyebrow">Make the visit yours</span><h2>Things to do in ${item.name}</h2></div><p>Choose activities that match your pace, the season, and current local access.</p></div><div class="activity-ideas-grid">${ideas.map(idea => `<article class="activity-idea"><span>${idea.icon}</span><div><h3>${idea.name}</h3><p>${idea.description}</p></div></article>`).join("")}</div></section>
       <section class="place-section"><span class="eyebrow">Why go</span><h2>What stays with you</h2><div class="love-grid">${content.love.map((point, index) => `<div class="love-card"><span>0${index + 1}</span><p>${point}</p></div>`).join("")}</div></section>
       <section class="local-note"><span class="local-note-icon">⌖</span><div><span class="eyebrow">Travel thoughtfully</span><h3>A useful local note</h3><p>${content.tip}</p></div></section>
       <section class="place-section"><div class="place-section-head"><div><span class="eyebrow">Keep exploring</span><h2>Nearby places</h2></div><a class="text-link" href="#/map">See on the map →</a></div><div class="nearby-row">${nearby.map(x => `<a class="mini-card" href="#/destination/${x.id}" style="${destinationTheme(x).style}"><img src="${x.image}" alt="${x.name}" loading="lazy"><div><span class="eyebrow">${x.category}</span><strong>${x.name}</strong><p>${x.region} · ${x.duration}</p></div></a>`).join("")}</div></section>
