@@ -1429,19 +1429,43 @@ app.addEventListener("submit", event => {
 
 const languagePanel = document.querySelector("#language-panel");
 const rtlLanguages = new Set(["ar", "fa", "he", "ur", "ps", "sd", "yi", "ckb"]);
+const customLanguageSelector = document.querySelector("#site-language");
+function translatedLanguageCookie() {
+  return decodeURIComponent(document.cookie.match(/(?:^|;\s*)googtrans=\/en\/([^;]+)/)?.[1] || "en");
+}
+function applyLanguageLayout(language) {
+  document.documentElement.lang = language;
+  document.documentElement.dir = rtlLanguages.has(language) ? "rtl" : "ltr";
+  languagePanel.hidden = true;
+  document.querySelector("[data-action='language']")?.setAttribute("aria-expanded", "false");
+}
 function connectLanguageSelector() {
   const selector = document.querySelector("#google_translate_element .goog-te-combo");
-  if (!selector || selector.dataset.beyondJordanReady) return;
+  if (!selector || selector.options.length < 2 || selector.dataset.beyondJordanReady) return;
   selector.dataset.beyondJordanReady = "true";
-  const applyLanguage = () => {
-    const language = selector.value || "en";
-    document.documentElement.lang = language;
-    document.documentElement.dir = rtlLanguages.has(language) ? "rtl" : "ltr";
-    languagePanel.hidden = true;
-    document.querySelector("[data-action='language']")?.setAttribute("aria-expanded", "false");
-  };
-  selector.addEventListener("change", applyLanguage);
-  if (selector.value) applyLanguage();
+  const languageNames = new Intl.DisplayNames(["en"], { type: "language" });
+  const languages = [...new Set([...selector.options].map(option => option.value).filter(Boolean))]
+    .map(code => {
+      try { return [code, languageNames.of(code) || code]; }
+      catch { return [code, code]; }
+    })
+    .sort((a, b) => a[1].localeCompare(b[1], "en"));
+  customLanguageSelector.innerHTML = `<option value="en">English</option>${languages.map(([code, name]) => `<option value="${code}">${escapeHtml(name)}</option>`).join("")}`;
+  const currentLanguage = selector.value || translatedLanguageCookie();
+  if ([...customLanguageSelector.options].some(option => option.value === currentLanguage)) customLanguageSelector.value = currentLanguage;
+  applyLanguageLayout(currentLanguage);
+  customLanguageSelector.addEventListener("change", () => {
+    const language = customLanguageSelector.value;
+    applyLanguageLayout(language);
+    if (language === "en") {
+      document.cookie = "googtrans=/en/en; path=/; SameSite=Lax";
+      if (location.hostname.includes(".")) document.cookie = `googtrans=/en/en; path=/; domain=.${location.hostname}; SameSite=Lax`;
+      location.reload();
+      return;
+    }
+    selector.value = language;
+    selector.dispatchEvent(new Event("change"));
+  });
 }
 new MutationObserver(connectLanguageSelector).observe(document.querySelector("#google_translate_element"), { childList: true, subtree: true });
 connectLanguageSelector();

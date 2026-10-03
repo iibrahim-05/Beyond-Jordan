@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@^6.11.2/dist/maplibre-gl.css" />
-    <link rel="stylesheet" href="styles.css?v=20261003-language-menu" />
+    <link rel="stylesheet" href="styles.css?v=20261003-language-menu-v2" />
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
@@ -21,8 +21,13 @@
         <button id="close-language-panel" class="language-close" type="button" aria-label="Close language menu">×</button>
       </div>
       <p>Translate the complete website into your preferred language.</p>
-      <div id="google_translate_element"><span class="language-loading">Loading languages…</span></div>
-      <small>Translation powered by Google Translate.</small>
+      <label class="language-label" for="site-language">Website language</label>
+      <select id="site-language" class="site-language" aria-label="Website language">
+        <option value="en">English</option>
+        <option value="" disabled>Loading more languages…</option>
+      </select>
+      <div id="google_translate_element" class="translation-engine" aria-hidden="true"></div>
+      <small>Translation powered by <a href="https://translate.google.com/" target="_blank" rel="noopener">Google Translate</a>.</small>
     </aside>
     <div id="app"></div>
     <div id="modal-root"></div>
@@ -34,6 +39,6 @@
       };
     </script>
     <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" defer></script>
-    <script type="module" src="app.js?v=20261003-language-menu"></script>
+    <script type="module" src="app.js?v=20261003-language-menu-v2"></script>
   </body>
 </html>
