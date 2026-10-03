@@ -928,9 +928,33 @@ function plannerSidebar(active = 1) {
   return `<aside class="planner-sidebar"><h3>Your Trip</h3><p>Build a journey that balances icons and discoveries.</p>${["Trip Basics", "Interests", "Places", "Review"].map((label, i) => `<div class="step ${i + 1 <= active ? "active" : ""}"><span>${i + 1}</span>${label}</div>`).join("")}</aside>`;
 }
 
+function tripPlaceCard(item) {
+  return `<div class="trip-place-card">${destinationCard(item, item.hidden)}<button type="button" class="trip-remove-place" data-remove-trip-place="${item.id}" aria-label="Remove ${item.name} from trip">× Remove from trip</button></div>`;
+}
+
+function tripSuggestionCard(item) {
+  return `<article class="trip-suggestion"><img src="${item.image}" alt="${item.name}" loading="lazy"><div><span class="eyebrow">${item.category}${item.hidden ? " · Hidden gem" : ""}</span><h3>${item.name}</h3><p>${item.subtitle}</p></div><button type="button" class="btn outline" data-add-trip="${item.id}">Add to trip</button></article>`;
+}
+
 function tripPlannerPage() {
   const selectedPlaces = destinations.filter(x => state.trip.stops.includes(x.id));
-  return `${nav("trip-planner")}<main id="main">${pageHero("Shape Your Journey", "Trip Planner", "Choose your pace and interests, then adjust a simple day-by-day route.", IMG.wadiRum)}<section class="section"><div class="container planner-shell">${plannerSidebar(3)}<div class="planner-main"><span class="eyebrow">Your preferences</span><h2 style="font-size:2.2rem">Plan your Jordan adventure</h2><div class="form-grid"><div class="field"><label for="trip-name">Trip name</label><input id="trip-name" value="${escapeHtml(state.trip.name)}"></div><div class="field"><label for="trip-days">Trip duration</label><select id="trip-days">${[3,5,7,10,14].map(d => `<option value="${d}" ${state.trip.days === d ? "selected" : ""}>${d} days</option>`).join("")}</select></div></div><h3 style="margin-top:32px">What interests you?</h3><div class="interest-grid">${["History", "Nature", "Adventure", "Culture", "Water", "Wellness"].map(x => `<button class="interest ${state.trip.interests.includes(x) ? "selected" : ""}" data-interest="${x}"><strong>${x}</strong><br><small>${({History:"Ancient cities & stories",Nature:"Trails & reserves",Adventure:"Desert & canyon",Culture:"Food & local life",Water:"Sea & springs",Wellness:"Slow, restorative days"})[x]}</small></button>`).join("")}</div><h3 style="margin-top:32px">Places in your trip</h3>${selectedPlaces.length ? `<div class="grid cards-3">${selectedPlaces.slice(0,6).map(x => destinationCard(x, x.hidden)).join("")}</div>` : `<div class="planner-empty"><span>⌖</span><div><h3>No places added yet</h3><p>Explore Jordan and add the destinations you want to include in this trip.</p></div><a class="btn outline" href="#/explore">Choose Places</a></div>`}<div class="planner-footer"><a class="btn outline" href="#/explore">Add more places</a><button class="btn primary" data-action="build-itinerary">Build Itinerary →</button></div></div></div></section></main>${footer()}`;
+  const interests = state.trip.interests || [];
+  const suggestedPlaces = destinations
+    .filter(item => !state.trip.stops.includes(item.id))
+    .sort((a, b) => Number(interests.includes(b.category)) - Number(interests.includes(a.category)) || Number(b.hidden) - Number(a.hidden) || b.rating - a.rating)
+    .slice(0, 3);
+  const interestNames = interests.length ? interests.join(", ") : "your selected travel style";
+  return `${nav("trip-planner")}<main id="main">
+    ${pageHero("Shape Your Journey", "Trip Planner", "Choose your pace and interests, then adjust a simple day-by-day route.", IMG.wadiRum)}
+    <section class="section"><div class="container planner-shell">${plannerSidebar(3)}<div class="planner-main">
+      <span class="eyebrow">Your preferences</span><h2 style="font-size:2.2rem">Plan your Jordan adventure</h2>
+      <div class="form-grid"><div class="field"><label for="trip-name">Trip name</label><input id="trip-name" value="${escapeHtml(state.trip.name)}"></div><div class="field"><label for="trip-days">Trip duration</label><select id="trip-days">${[3,5,7,10,14].map(d => `<option value="${d}" ${state.trip.days === d ? "selected" : ""}>${d} days</option>`).join("")}</select></div></div>
+      <h3 style="margin-top:32px">What interests you?</h3><p class="planner-helper">Your choices now shape the recommendations below and describe the style of your saved journey.</p>
+      <div class="interest-grid">${["History", "Nature", "Adventure", "Culture", "Water", "Wellness"].map(x => `<button class="interest ${interests.includes(x) ? "selected" : ""}" data-interest="${x}"><strong>${x}</strong><br><small>${({History:"Ancient cities & stories",Nature:"Trails & reserves",Adventure:"Desert & canyon",Culture:"Food & local life",Water:"Sea & springs",Wellness:"Slow, restorative days"})[x]}</small></button>`).join("")}</div>
+      ${suggestedPlaces.length ? `<section class="planner-suggestions"><div class="planner-subhead"><div><span class="eyebrow">Matched to your interests</span><h3>Recommended for you</h3></div><p>Suggestions based on ${escapeHtml(interestNames)}.</p></div><div class="trip-suggestion-grid">${suggestedPlaces.map(tripSuggestionCard).join("")}</div></section>` : ""}
+      <h3 style="margin-top:36px">Places in your trip</h3>${selectedPlaces.length ? `<div class="grid cards-3">${selectedPlaces.map(tripPlaceCard).join("")}</div>` : `<div class="planner-empty"><span>⌖</span><div><h3>No places added yet</h3><p>Use a recommendation above or browse all destinations to start your trip.</p></div><a class="btn outline" href="#/explore">Choose Places</a></div>`}
+      <div class="planner-footer"><a class="btn outline" href="#/explore">Add more places</a><button class="btn primary" data-action="build-itinerary">Build Itinerary →</button></div>
+    </div></div></section></main>${footer()}`;
 }
 
 function itineraryDays() {
@@ -1085,6 +1109,17 @@ async function confirmTrip(id) {
   toast(`${findDestination(id).name} added to day ${day} of ${state.trip.name}.`);
 }
 
+async function removeTripPlace(id) {
+  const item = destinations.find(place => place.id === id);
+  state.trip.stops = state.trip.stops.filter(stopId => stopId !== id);
+  Object.keys(state.trip.schedule).forEach(day => {
+    state.trip.schedule[day] = state.trip.schedule[day].filter(entry => entry.id !== id);
+  });
+  await syncCloudData();
+  render({ preserveScroll: true });
+  toast(`${item?.name || "Place"} removed from your trip.`);
+}
+
 function openAdjustDayModal(day) {
   const entries = state.trip.schedule?.[day] || [];
   modalRoot.innerHTML = `<div class="modal-backdrop" data-action="close-modal"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="adjust-day-title" data-modal><div class="modal-head"><div><span class="eyebrow">Itinerary</span><h2 id="adjust-day-title">Adjust Day ${day}</h2></div><button class="icon-btn" data-action="close-modal" aria-label="Close">×</button></div><div class="modal-body"><p class="modal-help">Select the places you want on this day. Selecting a place already assigned elsewhere moves it here.</p>${state.trip.stops.length ? `<div class="day-place-list">${state.trip.stops.map(id => { const item = findDestination(id); return `<label class="day-place-option"><input type="checkbox" value="${id}" ${entries.some(entry => entry.id === id) ? "checked" : ""}><img src="${item.image}" alt=""><span><strong>${item.name}</strong><small>${item.region} · ${item.duration}</small></span></label>`; }).join("")}</div>` : `<div class="modal-empty"><strong>No places in this trip yet</strong><p>Add destinations from Explore before adjusting this day.</p></div>`}</div><div class="modal-foot"><button class="btn ghost" data-action="close-modal">Cancel</button><button class="btn primary" data-save-day="${day}" ${state.trip.stops.length ? "" : "disabled"}>Save Day</button></div></section></div>`;
@@ -1230,6 +1265,12 @@ app.addEventListener("click", async event => {
   if (addTrip) {
     event.preventDefault();
     openAddTripModal(addTrip.dataset.addTrip);
+    return;
+  }
+  const removeTripPlaceButton = event.target.closest("[data-remove-trip-place]");
+  if (removeTripPlaceButton) {
+    event.preventDefault();
+    await removeTripPlace(removeTripPlaceButton.dataset.removeTripPlace);
     return;
   }
   const adjustDay = event.target.closest("[data-adjust-day]");
