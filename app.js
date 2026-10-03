@@ -1446,9 +1446,12 @@ function connectLanguageSelector() {
   const languageNames = new Intl.DisplayNames(["en"], { type: "language" });
   const languages = [...new Set([...selector.options].map(option => option.value).filter(Boolean))]
     .map(code => {
-      try { return [code, languageNames.of(code) || code]; }
-      catch { return [code, code]; }
+      try {
+        const name = languageNames.of(code);
+        return name && name.toLowerCase() !== code.toLowerCase() ? [code, name] : null;
+      } catch { return null; }
     })
+    .filter(Boolean)
     .sort((a, b) => a[1].localeCompare(b[1], "en"));
   customLanguageSelector.innerHTML = `<option value="en">English</option>${languages.map(([code, name]) => `<option value="${code}">${escapeHtml(name)}</option>`).join("")}`;
   const currentLanguage = selector.value || translatedLanguageCookie();
