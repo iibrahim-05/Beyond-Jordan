@@ -1106,6 +1106,7 @@ async function confirmTrip(id) {
   (state.trip.schedule[day] ||= []).push({ id, note });
   await syncCloudData();
   closeModal();
+  render({ preserveScroll: true });
   toast(`${findDestination(id).name} added to day ${day} of ${state.trip.name}.`);
 }
 
