@@ -963,7 +963,7 @@ function authPage(mode) {
 function profilePage() {
   if (!state.user) return authPage("login");
   const savedTrip = state.trip.savedAt;
-  return `${nav("profile")}<main id="main">${pageHero("Your Beyond Jordan", "Profile & Saved Trips", "Return to the journeys you’ve planned and the places you love.", IMG.amman)}<section class="section"><div class="container"><div class="profile-head"><div class="profile-user"><span class="avatar">${escapeHtml(state.user.name?.[0]?.toUpperCase() || "T")}</span><div><h2>${escapeHtml(state.user.name || "Traveler")}</h2><p>${escapeHtml(state.user.email || "")}</p></div></div><button class="btn light" data-action="logout">Log Out</button></div><div class="section-head" style="margin-top:64px"><div><span class="eyebrow">Saved Trips</span><h2>Your Journeys</h2></div>${savedTrip ? `<a class="btn primary" href="#/trip-planner">Plan New Trip</a>` : ""}</div>${savedTrip ? `<div class="grid cards-3"><article class="trip-card"><span class="tag">${state.trip.days} days</span><h3 style="margin-top:18px">${escapeHtml(state.trip.name)}</h3><p>Jordan · ${state.trip.interests.join(" · ")}</p><div class="meta"><span>${state.trip.stops.length} places</span><span>Saved journey</span></div><div class="progress"><span style="width:${Math.min(100, Math.round((state.trip.stops.length / Math.max(1, state.trip.days)) * 100))}%"></span></div><a class="btn outline wide" style="margin-top:22px" href="#/itinerary">Open Itinerary</a></article></div>` : `<div class="profile-trip-empty"><span>✦</span><h3>Start building your Jordan plan</h3><p>You do not have a saved trip yet. Choose your interests, add places, and turn them into a day-by-day journey.</p><a class="btn primary" href="#/trip-planner">Start Building Your Plan →</a></div>`}</div></section></main>${footer()}`;
+  return `${nav("profile")}<main id="main">${pageHero("Your Beyond Jordan", "Profile & Saved Trips", "Return to the journeys you’ve planned and the places you love.", IMG.amman)}<section class="section"><div class="container"><div class="profile-head"><div class="profile-user"><span class="avatar">${escapeHtml(state.user.name?.[0]?.toUpperCase() || "T")}</span><div><h2>${escapeHtml(state.user.name || "Traveler")}</h2><p>${escapeHtml(state.user.email || "")}</p></div></div><button class="btn light" data-action="logout">Log Out</button></div><div class="section-head" style="margin-top:64px"><div><span class="eyebrow">Saved Trips</span><h2>Your Journeys</h2></div>${savedTrip ? `<a class="btn primary" href="#/trip-planner">Plan New Trip</a>` : ""}</div>${savedTrip ? `<div class="grid cards-3"><article class="trip-card"><span class="tag">${state.trip.days} days</span><h3 style="margin-top:18px">${escapeHtml(state.trip.name)}</h3><p>Jordan · ${state.trip.interests.join(" · ")}</p><div class="meta"><span>${state.trip.stops.length} places</span><span>Saved journey</span></div><div class="progress"><span style="width:${Math.min(100, Math.round((state.trip.stops.length / Math.max(1, state.trip.days)) * 100))}%"></span></div><div class="trip-card-actions"><a class="btn outline wide" href="#/itinerary">Open Itinerary</a><button class="btn danger wide" data-action="delete-trip">Delete Trip</button></div></article></div>` : `<div class="profile-trip-empty"><span>✦</span><h3>Start building your Jordan plan</h3><p>You do not have a saved trip yet. Choose your interests, add places, and turn them into a day-by-day journey.</p><a class="btn primary" href="#/trip-planner">Start Building Your Plan →</a></div>`}</div></section></main>${footer()}`;
 }
 
 function notFoundPage() {
@@ -1044,6 +1044,19 @@ function dayChoiceButtons(days, activeDay = 1) {
 function closeModal() {
   modalRoot.innerHTML = "";
   document.body.classList.remove("modal-open");
+}
+
+function openDeleteTripModal() {
+  modalRoot.innerHTML = `<div class="modal-backdrop" data-action="close-modal"><section class="modal confirm-modal" role="dialog" aria-modal="true" aria-labelledby="delete-trip-title"><div class="modal-head"><h2 id="delete-trip-title">Delete this trip?</h2><button class="icon-btn" data-action="close-modal" aria-label="Close">×</button></div><div class="modal-body"><p>This will permanently remove <strong>${escapeHtml(state.trip.name)}</strong>, including its selected places, day order, and notes.</p></div><div class="modal-foot"><button class="btn ghost" data-action="close-modal">Keep Trip</button><button class="btn danger" data-confirm-delete-trip>Delete Trip</button></div></section></div>`;
+  document.body.classList.add("modal-open");
+}
+
+async function deleteTrip() {
+  state.trip = normalizeTrip(DEFAULT_TRIP);
+  await syncCloudData();
+  closeModal();
+  render({ preserveScroll: true });
+  toast("Your trip was deleted.");
 }
 
 function openGalleryImage(src, label) {
@@ -1246,7 +1259,7 @@ app.addEventListener("click", async event => {
     const value = interest.dataset.interest;
     state.trip.interests = state.trip.interests.includes(value) ? state.trip.interests.filter(x => x !== value) : [...state.trip.interests, value];
     await syncCloudData();
-    render();
+    render({ preserveScroll: true });
     return;
   }
   const action = event.target.closest("[data-action]")?.dataset.action;
@@ -1298,6 +1311,7 @@ app.addEventListener("click", async event => {
   if (action === "share-trip") {
     await shareTripOverview();
   }
+  if (action === "delete-trip") openDeleteTripModal();
   if (action === "logout") await logout();
 });
 
@@ -1310,6 +1324,8 @@ modalRoot.addEventListener("click", async event => {
   if (event.target.matches("[data-action='close-modal']")) closeModal();
   const saveDay = event.target.closest("[data-save-day]");
   if (saveDay) await saveAdjustedDay(Number(saveDay.dataset.saveDay));
+  const deleteTripButton = event.target.closest("[data-confirm-delete-trip]");
+  if (deleteTripButton) await deleteTrip();
   const confirm = event.target.closest("[data-confirm-trip]");
   if (confirm) await confirmTrip(confirm.dataset.confirmTrip);
 });
