@@ -460,6 +460,7 @@ html body { top: 0 !important; }
 .radio-card { display: flex; justify-content: space-between; padding: 15px; margin-bottom: 10px; border: 1px solid var(--sand-200); border-radius: 8px; }
 .radio-card:has(input:checked) { border-color: var(--green-900); background: #eef4f1; box-shadow: inset 0 0 0 1px var(--green-900); }
 .new-trip-fields { display: grid; grid-template-columns: 1.4fr .8fr; gap: 12px; margin: 16px 0 4px; padding: 16px; border-radius: 10px; background: var(--sand-100); }
+.new-trip-fields[hidden] { display: none; }
 .modal-section-title { margin-top: 26px; font: 700 .9rem "DM Sans", sans-serif; }
 .day-picker { max-height: 178px; display: grid; grid-template-columns: repeat(auto-fit, minmax(58px, 1fr)); gap: 7px; margin: 12px 0 22px; overflow-y: auto; }
 .day-choice { padding: 10px 4px; border: 1px solid var(--sand-200); border-radius: 7px; background: #fff; text-align: center; }

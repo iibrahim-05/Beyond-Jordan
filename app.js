@@ -1499,6 +1499,23 @@ modalRoot.addEventListener("change", event => {
   }
 });
 
+app.addEventListener("input", event => {
+  if (!event.target.matches("#trip-name")) return;
+  state.trip.name = event.target.value.trim() || DEFAULT_TRIP.name;
+  storeLocal();
+});
+
+app.addEventListener("change", async event => {
+  if (!event.target.matches("#trip-name, #trip-days")) return;
+  state.trip = normalizeTrip({
+    ...state.trip,
+    name: document.querySelector("#trip-name")?.value.trim() || DEFAULT_TRIP.name,
+    days: Number(document.querySelector("#trip-days")?.value || state.trip.days)
+  });
+  await syncCloudData();
+  toast("Trip preferences saved.");
+});
+
 app.addEventListener("submit", event => {
   const form = event.target;
   if (form.matches("[data-form='search']")) {
