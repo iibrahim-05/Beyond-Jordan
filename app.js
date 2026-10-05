@@ -719,6 +719,41 @@ function mapPage() {
 
 const AI_INTERESTS = ["History", "Nature", "Adventure", "Culture", "Water", "Wellness"];
 
+function aiStopLimit(days) {
+  return Math.min(15, Math.max(3, Math.ceil(Number(days || 7) * .6)));
+}
+
+function buildAiDayPlan(plan, days) {
+  const totalDays = Math.max(1, Number(days) || 7);
+  const stopIds = [...new Set(plan?.stopIds || [])].slice(0, totalDays);
+  if (!stopIds.length) return [];
+
+  const allocations = stopIds.map(() => 1);
+  const priority = stopIds.map((id, index) => {
+    const item = findDestination(id);
+    const durationScore = item.duration.includes("1–3 days") ? 3 : item.duration.includes("days") ? 2 : 1;
+    return { index, score: durationScore + Number(Boolean(item.iconic)) };
+  }).sort((a, b) => b.score - a.score || a.index - b.index);
+
+  let remaining = totalDays - stopIds.length;
+  let cursor = 0;
+  while (remaining > 0) {
+    allocations[priority[cursor % priority.length].index] += 1;
+    cursor += 1;
+    remaining -= 1;
+  }
+
+  const dayPlan = [];
+  let day = 1;
+  stopIds.forEach((id, index) => {
+    for (let stayDay = 1; stayDay <= allocations[index]; stayDay += 1) {
+      dayPlan.push({ day, id, stayDay, stayLength: allocations[index] });
+      day += 1;
+    }
+  });
+  return dayPlan;
+}
+
 function destinationCatalog() {
   return destinations.map(item => {
     const content = destinationContent(item);
@@ -730,7 +765,7 @@ function buildSmartPlan(preferences) {
   const interests = preferences.interests.length ? preferences.interests : ["Culture", "History"];
   const paceBonus = preferences.pace === "adventurous" ? "Adventure" : preferences.pace === "relaxed" ? "Wellness" : "Culture";
   const wanted = new Set([...interests, paceBonus]);
-  const count = Math.min(15, Math.max(4, Math.ceil(preferences.days * .6)));
+  const count = aiStopLimit(preferences.days);
   const ranked = [...destinations].sort((a, b) => {
     const score = item => Number(item.rating) + (wanted.has(item.category) ? 5 : 0) + (item.hidden ? 1.2 : 0) + (item.iconic ? .7 : 0);
     return score(b) - score(a);
@@ -815,8 +850,8 @@ function parseAiPlan(text, preferences) {
   const end = text.lastIndexOf("}");
   if (start < 0 || end < start) throw new Error("AI response was not structured");
   const parsed = JSON.parse(text.slice(start, end + 1));
-  const maxStops = Math.min(15, Math.max(4, Math.ceil(preferences.days * .6)));
-  const stopIds = (parsed.stopIds || []).filter(id => destinations.some(item => item.id === id)).slice(0, maxStops);
+  const maxStops = aiStopLimit(preferences.days);
+  const stopIds = [...new Set((parsed.stopIds || []).filter(id => destinations.some(item => item.id === id)))].slice(0, maxStops);
   if (stopIds.length < 3) throw new Error("AI route did not include enough valid places");
   return {
     title: String(parsed.title || `${preferences.days}-Day Jordan Journey`),
@@ -842,8 +877,8 @@ async function createAiPlan(form) {
   state.aiBusy = true;
   render({ preserveScroll: true });
   try {
-    const maxStops = Math.min(15, Math.max(4, Math.ceil(preferences.days * .6)));
-    const prompt = `Create a personalized Jordan itinerary using only IDs from this catalog.\nPreferences: ${JSON.stringify(preferences)}\nCatalog:\n${destinationCatalog()}\nReturn JSON only with this shape: {"title":"...","summary":"...","stopIds":["id"],"travelDna":["tag"],"hiddenGemId":"id","tips":["tip"]}. Choose 4-${maxStops} geographically sensible stops that suit a ${preferences.days}-day trip, include at least one hidden gem, allow multi-day stays on longer journeys, and avoid claiming live information.`;
+    const maxStops = aiStopLimit(preferences.days);
+    const prompt = `Create a personalized Jordan itinerary using only IDs from this catalog.\nPreferences: ${JSON.stringify(preferences)}\nCatalog:\n${destinationCatalog()}\nReturn JSON only with this shape: {"title":"...","summary":"...","stopIds":["id"],"travelDna":["tag"],"hiddenGemId":"id","tips":["tip"]}. Choose 3-${maxStops} geographically sensible stops that suit a ${preferences.days}-day trip, include at least one hidden gem, allow multi-day stays on longer journeys, and avoid claiming live information.`;
     state.aiPlan = parseAiPlan(await runGemini(prompt), preferences);
   } catch (error) {
     state.aiOnline = false;
@@ -968,8 +1003,10 @@ async function askAiConcierge(message) {
 function aiPlanResult() {
   const plan = state.aiPlan;
   if (!plan) return "";
+  const days = state.aiPreferences?.days || 7;
+  const dayPlan = buildAiDayPlan(plan, days);
   const hiddenGem = findDestination(plan.hiddenGemId || plan.stopIds.find(id => findDestination(id).hidden));
-  return `<section class="ai-result" id="ai-result"><div class="ai-result-head"><div><span class="eyebrow">${plan.source === "gemini" ? "Generated with Gemini" : "Smart route ready"}</span><h2>${escapeHtml(plan.title)}</h2><p>${escapeHtml(plan.summary)}</p></div><button class="btn primary" data-action="use-ai-plan">Use this plan →</button></div><div class="travel-dna"><strong>Your Travel DNA</strong>${plan.travelDna.map(tag => `<span>${escapeHtml(tag)}</span>`).join("")}</div><div class="ai-route">${plan.stopIds.map((id, index) => { const item = findDestination(id); return `<a href="#/destination/${item.id}" class="ai-route-stop"><span>${index + 1}</span><img src="${item.image}" alt="${item.name}"><div><strong>${item.name}</strong><small>${item.region} · ${item.category}</small></div></a>`; }).join("")}</div><div class="ai-insights"><article><span class="eyebrow">Your hidden-gem match</span><h3>${hiddenGem.name}</h3><p>${hiddenGem.subtitle}</p><a class="text-link" href="#/destination/${hiddenGem.id}">Why it fits you →</a></article><article><span class="eyebrow">Smart route notes</span><ul>${plan.tips.map(tip => `<li>${escapeHtml(tip)}</li>`).join("")}</ul></article></div></section>`;
+  return `<section class="ai-result" id="ai-result"><div class="ai-result-head"><div><span class="eyebrow">${plan.source === "gemini" ? "Generated with Gemini" : "Smart route ready"}</span><h2>${escapeHtml(plan.title)}</h2><p>${escapeHtml(plan.summary)}</p><p class="ai-plan-count"><strong>${days} days</strong> · ${plan.stopIds.length} different places · Multi-day stays included</p></div><button class="btn primary" data-action="use-ai-plan">Use this plan →</button></div><div class="travel-dna"><strong>Your Travel DNA</strong>${plan.travelDna.map(tag => `<span>${escapeHtml(tag)}</span>`).join("")}</div><div class="ai-route">${dayPlan.map(entry => { const item = findDestination(entry.id); const stay = entry.stayLength > 1 ? ` · Stay day ${entry.stayDay} of ${entry.stayLength}` : ""; return `<a href="#/destination/${item.id}" class="ai-route-stop"><span>${entry.day}</span><img src="${item.image}" alt="${item.name}"><div><strong>Day ${entry.day} · ${item.name}</strong><small>${item.region} · ${item.category}${stay}</small></div></a>`; }).join("")}</div><div class="ai-insights"><article><span class="eyebrow">Your hidden-gem match</span><h3>${hiddenGem.name}</h3><p>${hiddenGem.subtitle}</p><a class="text-link" href="#/destination/${hiddenGem.id}">Why it fits you →</a></article><article><span class="eyebrow">Smart route notes</span><ul>${plan.tips.map(tip => `<li>${escapeHtml(tip)}</li>`).join("")}</ul></article></div></section>`;
 }
 
 function aiGuidePage() {
@@ -1395,13 +1432,17 @@ app.addEventListener("click", async event => {
   }
   if (action === "use-ai-plan" && state.aiPlan) {
     const preferences = state.aiPreferences || { days: 7, interests: ["History", "Culture"] };
+    const schedule = Object.fromEntries(buildAiDayPlan(state.aiPlan, preferences.days).map(entry => [entry.day, [{
+      id: entry.id,
+      note: entry.stayLength > 1 ? `Day ${entry.stayDay} of ${entry.stayLength} in ${findDestination(entry.id).name}` : ""
+    }]]));
     state.trip = normalizeTrip({
       ...state.trip,
       name: state.aiPlan.title,
       days: preferences.days,
       interests: preferences.interests.length ? preferences.interests : ["History", "Culture"],
       stops: [...state.aiPlan.stopIds],
-      schedule: {},
+      schedule,
       savedAt: null
     });
     await syncCloudData();
