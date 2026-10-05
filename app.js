@@ -190,7 +190,7 @@ function tripDurationOptions(selectedDays = 7) {
 
 function normalizeTrip(value = {}) {
   const days = Math.min(30, Math.max(1, Number(value.days) || DEFAULT_TRIP.days));
-  const stops = [...new Set(Array.isArray(value.stops) ? value.stops : [])].filter(id => destinations.some(item => item.id === id));
+  const stops = [...new Set(Array.isArray(value.stops) ? value.stops : [])].filter(id => destinations.some(item => item.id === id) || heritageSites.some(item => item.id === id));
   const schedule = {};
   if (value.schedule && typeof value.schedule === "object") {
     Object.entries(value.schedule).forEach(([day, entries]) => {
@@ -242,6 +242,9 @@ const route = () => location.hash.replace(/^#\/?/, "") || "home";
 const findDestination = id => destinations.find(item => item.id === id) || destinations[0];
 const findActivity = id => activities.find(item => item.id === id) || activities[0];
 const findHeritageSite = id => heritageSites.find(item => item.id === id);
+const findTripPlace = id => destinations.find(item => item.id === id) || findHeritageSite(id);
+const tripPlaceHref = item => findHeritageSite(item.id) ? `#/heritage/${item.id}` : `#/destination/${item.id}`;
+const tripPlaceDuration = item => item.duration || "Flexible visit";
 const storeLocal = () => {
   localStorage.setItem("bj-favorites", JSON.stringify(state.favorites));
   localStorage.setItem("bj-trip", JSON.stringify(state.trip));
@@ -483,7 +486,7 @@ function heritageDetailPage(id) {
       ${imageNotice}
       <section class="local-note"><span class="local-note-icon">⌖</span><div><span class="eyebrow">Plan responsibly</span><h3>Check access before visiting</h3><p>Opening hours, road conditions, and public access can change. Confirm current information with Jordan’s Department of Antiquities, the Ministry of Tourism, or a trusted local guide before setting out.</p></div></section>
       <section class="place-section"><div class="place-section-head"><div><span class="eyebrow">Continue nearby</span><h2>More heritage places</h2></div><a class="text-link" href="#/map">See all on the map →</a></div><div class="nearby-row">${nearby.map(place => `<a class="mini-card" href="#/heritage/${place.id}"><img src="${place.image}" alt="${place.name}" loading="lazy"><div><span class="eyebrow">${place.category}</span><strong>${place.name}</strong><p>${place.region} · ${place.era}</p></div></a>`).join("")}</div></section>
-    </article><aside class="booking-box place-booking"><span class="ai-match-badge">⌖ Heritage map entry</span><h3>Find ${item.name} on the map</h3><p>Return to the interactive map to compare this site with nearby places across Jordan.</p><div class="match-tags"><span>${item.region}</span><span>${item.category}</span><span>${item.era}</span></div><div class="booking-actions"><a class="btn primary wide" href="#/map">Back to Jordan Map</a><a class="btn outline wide" href="#/ai-guide">Ask the AI Guide</a></div></aside></div></section>
+    </article><aside class="booking-box place-booking"><span class="ai-match-badge">⌖ Heritage map entry</span><h3>Add ${item.name} to your journey</h3><p>Save this archaeological site to a specific day, add a note, and combine it with nearby places across Jordan.</p><div class="match-tags"><span>${item.region}</span><span>${item.category}</span><span>${item.era}</span></div><div class="booking-actions"><button class="btn primary wide" data-add-trip="${item.id}">Add to Trip Planner</button><a class="btn outline wide" href="#/map">Back to Jordan Map</a><a class="btn ghost wide" href="#/ai-guide">Ask the AI Guide</a></div></aside></div></section>
   </main>${footer()}`;
 }
 
@@ -1022,6 +1025,9 @@ function plannerSidebar(active = 1) {
 }
 
 function tripPlaceCard(item) {
+  if (findHeritageSite(item.id)) {
+    return `<div class="trip-place-card"><article class="destination-card heritage-trip-card"><div class="card-image"><a href="${tripPlaceHref(item)}" aria-label="View ${item.name}"><img src="${item.image}" alt="${item.name}, Jordan" loading="lazy"></a></div><div class="card-body"><span class="eyebrow">Heritage Map Site</span><div class="card-title-row"><h3><a href="${tripPlaceHref(item)}">${item.name}</a></h3><span class="activity-icon">⌖</span></div><p>${item.description}</p><div class="divider"></div><div class="meta"><span>${item.region}</span><span>${item.era}</span></div><a class="card-details-link" href="${tripPlaceHref(item)}">View archaeological details →</a></div></article><button type="button" class="trip-remove-place" data-remove-trip-place="${item.id}" aria-label="Remove ${item.name} from trip">× Remove from trip</button></div>`;
+  }
   return `<div class="trip-place-card">${destinationCard(item, item.hidden)}<button type="button" class="trip-remove-place" data-remove-trip-place="${item.id}" aria-label="Remove ${item.name} from trip">× Remove from trip</button></div>`;
 }
 
@@ -1030,7 +1036,7 @@ function tripSuggestionCard(item) {
 }
 
 function tripPlannerPage() {
-  const selectedPlaces = destinations.filter(x => state.trip.stops.includes(x.id));
+  const selectedPlaces = [...destinations, ...heritageSites].filter(x => state.trip.stops.includes(x.id));
   const interests = state.trip.interests || [];
   const suggestedPlaces = destinations
     .filter(item => !state.trip.stops.includes(item.id))
@@ -1054,9 +1060,9 @@ function itineraryDays() {
   return Array.from({ length: state.trip.days }, (_, index) => {
     const day = index + 1;
     const entries = state.trip.schedule?.[day] || [];
-    const dayPlaces = entries.map(entry => ({ ...entry, item: destinations.find(place => place.id === entry.id) })).filter(entry => entry.item);
+    const dayPlaces = entries.map(entry => ({ ...entry, item: findTripPlace(entry.id) })).filter(entry => entry.item);
     const region = [...new Set(dayPlaces.map(entry => entry.item.region))].join(" & ") || "Open day";
-    const stops = dayPlaces.map((entry, stopIndex) => `<div class="stop"><span class="stop-time">${String(9 + stopIndex * 3).padStart(2, "0")}:00</span><img src="${entry.item.image}" alt="${entry.item.name}"><div><h3>${entry.item.name}</h3><p>${escapeHtml(entry.note || entry.item.subtitle)}</p></div><div class="stop-controls"><button class="icon-btn" data-move-stop="up" data-day="${day}" data-stop-index="${stopIndex}" aria-label="Move ${entry.item.name} earlier" ${stopIndex === 0 ? "disabled" : ""}>↑</button><button class="icon-btn" data-move-stop="down" data-day="${day}" data-stop-index="${stopIndex}" aria-label="Move ${entry.item.name} later" ${stopIndex === dayPlaces.length - 1 ? "disabled" : ""}>↓</button></div></div>`).join("");
+    const stops = dayPlaces.map((entry, stopIndex) => `<div class="stop"><span class="stop-time">${String(9 + stopIndex * 3).padStart(2, "0")}:00</span><img src="${entry.item.image}" alt="${entry.item.name}"><div><h3><a href="${tripPlaceHref(entry.item)}">${entry.item.name}</a></h3><p>${escapeHtml(entry.note || entry.item.subtitle || entry.item.description)}</p></div><div class="stop-controls"><button class="icon-btn" data-move-stop="up" data-day="${day}" data-stop-index="${stopIndex}" aria-label="Move ${entry.item.name} earlier" ${stopIndex === 0 ? "disabled" : ""}>↑</button><button class="icon-btn" data-move-stop="down" data-day="${day}" data-stop-index="${stopIndex}" aria-label="Move ${entry.item.name} later" ${stopIndex === dayPlaces.length - 1 ? "disabled" : ""}>↓</button></div></div>`).join("");
     return `<article class="day"><div class="day-head"><div><span class="eyebrow">Day ${day}</span><h3>${escapeHtml(region)}</h3></div><button class="btn ghost" data-adjust-day="${day}">Adjust day</button></div>${stops || `<div class="empty-day"><p>No place planned for this day yet.</p><button class="text-link" data-adjust-day="${day}">Add a place</button></div>`}</article>`;
   }).join("");
 }
@@ -1151,7 +1157,8 @@ async function toggleFavorite(id) {
 
 function openAddTripModal(id) {
   if (!requireAuth(`trip:${id}`)) return;
-  const item = findDestination(id);
+  const item = findTripPlace(id);
+  if (!item) return;
   modalRoot.innerHTML = `<div class="modal-backdrop" data-action="close-modal"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" data-modal><div class="modal-head"><h2 id="modal-title">Add to Trip</h2><button class="icon-btn" data-action="close-modal" aria-label="Close">×</button></div><div class="modal-body"><span class="eyebrow">Choose a trip</span><label class="radio-card"><span>${escapeHtml(state.trip.name)}</span><input type="radio" checked name="trip-choice" value="existing"></label><label class="radio-card"><span>Create New Trip</span><input type="radio" name="trip-choice" value="new"></label><div class="new-trip-fields" data-new-trip-fields hidden><div class="field"><label for="new-trip-name">Trip name</label><input id="new-trip-name" value="My Jordan Adventure"></div><div class="field"><label for="new-trip-days">Trip duration</label><select id="new-trip-days">${tripDurationOptions(7)}</select></div></div><h3 class="modal-section-title">Which day?</h3><div class="day-picker" data-day-picker>${dayChoiceButtons(state.trip.days)}</div><div class="field"><label for="trip-note">Notes</label><textarea id="trip-note" placeholder="Add a note about this stop..."></textarea></div></div><div class="modal-foot"><button class="btn ghost" data-action="close-modal">Cancel</button><button class="btn primary" data-confirm-trip="${item.id}">Add to Trip</button></div></section></div>`;
   document.body.classList.add("modal-open");
 }
@@ -1202,11 +1209,11 @@ async function confirmTrip(id) {
   await syncCloudData();
   closeModal();
   render({ preserveScroll: true });
-  toast(`${findDestination(id).name} added to day ${day} of ${state.trip.name}.`);
+  toast(`${findTripPlace(id)?.name || "Place"} added to day ${day} of ${state.trip.name}.`);
 }
 
 async function removeTripPlace(id) {
-  const item = destinations.find(place => place.id === id);
+  const item = findTripPlace(id);
   state.trip.stops = state.trip.stops.filter(stopId => stopId !== id);
   Object.keys(state.trip.schedule).forEach(day => {
     state.trip.schedule[day] = state.trip.schedule[day].filter(entry => entry.id !== id);
@@ -1218,7 +1225,7 @@ async function removeTripPlace(id) {
 
 function openAdjustDayModal(day) {
   const entries = state.trip.schedule?.[day] || [];
-  modalRoot.innerHTML = `<div class="modal-backdrop" data-action="close-modal"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="adjust-day-title" data-modal><div class="modal-head"><div><span class="eyebrow">Itinerary</span><h2 id="adjust-day-title">Adjust Day ${day}</h2></div><button class="icon-btn" data-action="close-modal" aria-label="Close">×</button></div><div class="modal-body"><p class="modal-help">Select the places you want on this day. Selecting a place already assigned elsewhere moves it here.</p>${state.trip.stops.length ? `<div class="day-place-list">${state.trip.stops.map(id => { const item = findDestination(id); return `<label class="day-place-option"><input type="checkbox" value="${id}" ${entries.some(entry => entry.id === id) ? "checked" : ""}><img src="${item.image}" alt=""><span><strong>${item.name}</strong><small>${item.region} · ${item.duration}</small></span></label>`; }).join("")}</div>` : `<div class="modal-empty"><strong>No places in this trip yet</strong><p>Add destinations from Explore before adjusting this day.</p></div>`}</div><div class="modal-foot"><button class="btn ghost" data-action="close-modal">Cancel</button><button class="btn primary" data-save-day="${day}" ${state.trip.stops.length ? "" : "disabled"}>Save Day</button></div></section></div>`;
+  modalRoot.innerHTML = `<div class="modal-backdrop" data-action="close-modal"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="adjust-day-title" data-modal><div class="modal-head"><div><span class="eyebrow">Itinerary</span><h2 id="adjust-day-title">Adjust Day ${day}</h2></div><button class="icon-btn" data-action="close-modal" aria-label="Close">×</button></div><div class="modal-body"><p class="modal-help">Select the places you want on this day. Selecting a place already assigned elsewhere moves it here.</p>${state.trip.stops.length ? `<div class="day-place-list">${state.trip.stops.map(id => { const item = findTripPlace(id); return item ? `<label class="day-place-option"><input type="checkbox" value="${id}" ${entries.some(entry => entry.id === id) ? "checked" : ""}><img src="${item.image}" alt=""><span><strong>${item.name}</strong><small>${item.region} · ${item.era || tripPlaceDuration(item)}</small></span></label>` : ""; }).join("")}</div>` : `<div class="modal-empty"><strong>No places in this trip yet</strong><p>Add destinations from Explore or the Jordan Map before adjusting this day.</p></div>`}</div><div class="modal-foot"><button class="btn ghost" data-action="close-modal">Cancel</button><button class="btn primary" data-save-day="${day}" ${state.trip.stops.length ? "" : "disabled"}>Save Day</button></div></section></div>`;
   document.body.classList.add("modal-open");
 }
 
@@ -1248,7 +1255,7 @@ async function moveScheduledStop(day, index, direction) {
 function tripShareText() {
   const lines = [`${state.trip.name}`, `${state.trip.days}-day journey across Jordan`];
   for (let day = 1; day <= state.trip.days; day += 1) {
-    const names = (state.trip.schedule?.[day] || []).map(entry => findDestination(entry.id).name);
+    const names = (state.trip.schedule?.[day] || []).map(entry => findTripPlace(entry.id)?.name).filter(Boolean);
     lines.push(`Day ${day}: ${names.length ? names.join(" → ") : "Open day"}`);
   }
   return lines.join("\n");
@@ -1306,7 +1313,7 @@ async function authenticate(form) {
       setTimeout(() => toast(`${item?.name || "Item"} saved to favorites.`), 40);
     } else if (pending?.startsWith("trip:")) {
       const id = pending.split(":")[1];
-      location.hash = `#/destination/${id}`;
+      location.hash = findHeritageSite(id) ? `#/heritage/${id}` : `#/destination/${id}`;
       setTimeout(() => openAddTripModal(id), 80);
     } else {
       location.hash = "#/profile";
