@@ -181,7 +181,12 @@ const app = document.querySelector("#app");
 const modalRoot = document.querySelector("#modal-root");
 const toastRoot = document.querySelector("#toast-root");
 
+const TRIP_DURATION_OPTIONS = [3, 5, 7, 10, 14, 21, 30];
 const DEFAULT_TRIP = { name: "My Jordan Adventure", days: 7, interests: ["History", "Nature"], stops: [], schedule: {}, savedAt: null };
+
+function tripDurationOptions(selectedDays = 7) {
+  return TRIP_DURATION_OPTIONS.map(days => `<option value="${days}" ${days === selectedDays ? "selected" : ""}>${days === 30 ? "30 days (1 month)" : `${days} days`}</option>`).join("");
+}
 
 function normalizeTrip(value = {}) {
   const days = Math.min(30, Math.max(1, Number(value.days) || DEFAULT_TRIP.days));
@@ -725,7 +730,7 @@ function buildSmartPlan(preferences) {
   const interests = preferences.interests.length ? preferences.interests : ["Culture", "History"];
   const paceBonus = preferences.pace === "adventurous" ? "Adventure" : preferences.pace === "relaxed" ? "Wellness" : "Culture";
   const wanted = new Set([...interests, paceBonus]);
-  const count = Math.min(9, Math.max(4, preferences.days + 1));
+  const count = Math.min(15, Math.max(4, Math.ceil(preferences.days * .6)));
   const ranked = [...destinations].sort((a, b) => {
     const score = item => Number(item.rating) + (wanted.has(item.category) ? 5 : 0) + (item.hidden ? 1.2 : 0) + (item.iconic ? .7 : 0);
     return score(b) - score(a);
@@ -810,7 +815,8 @@ function parseAiPlan(text, preferences) {
   const end = text.lastIndexOf("}");
   if (start < 0 || end < start) throw new Error("AI response was not structured");
   const parsed = JSON.parse(text.slice(start, end + 1));
-  const stopIds = (parsed.stopIds || []).filter(id => destinations.some(item => item.id === id)).slice(0, 9);
+  const maxStops = Math.min(15, Math.max(4, Math.ceil(preferences.days * .6)));
+  const stopIds = (parsed.stopIds || []).filter(id => destinations.some(item => item.id === id)).slice(0, maxStops);
   if (stopIds.length < 3) throw new Error("AI route did not include enough valid places");
   return {
     title: String(parsed.title || `${preferences.days}-Day Jordan Journey`),
@@ -834,17 +840,18 @@ async function createAiPlan(form) {
   };
   state.aiPreferences = preferences;
   state.aiBusy = true;
-  render();
+  render({ preserveScroll: true });
   try {
-    const prompt = `Create a personalized Jordan itinerary using only IDs from this catalog.\nPreferences: ${JSON.stringify(preferences)}\nCatalog:\n${destinationCatalog()}\nReturn JSON only with this shape: {"title":"...","summary":"...","stopIds":["id"],"travelDna":["tag"],"hiddenGemId":"id","tips":["tip"]}. Choose 4-9 geographically sensible stops, include at least one hidden gem, and avoid claiming live information.`;
+    const maxStops = Math.min(15, Math.max(4, Math.ceil(preferences.days * .6)));
+    const prompt = `Create a personalized Jordan itinerary using only IDs from this catalog.\nPreferences: ${JSON.stringify(preferences)}\nCatalog:\n${destinationCatalog()}\nReturn JSON only with this shape: {"title":"...","summary":"...","stopIds":["id"],"travelDna":["tag"],"hiddenGemId":"id","tips":["tip"]}. Choose 4-${maxStops} geographically sensible stops that suit a ${preferences.days}-day trip, include at least one hidden gem, allow multi-day stays on longer journeys, and avoid claiming live information.`;
     state.aiPlan = parseAiPlan(await runGemini(prompt), preferences);
   } catch (error) {
     state.aiOnline = false;
     state.aiPlan = buildSmartPlan(preferences);
   }
   state.aiBusy = false;
-  render();
-  document.querySelector("#ai-result")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  render({ preserveScroll: true });
+  toast("Your AI journey is ready below.");
 }
 
 const DESTINATION_ALIASES = {
@@ -968,7 +975,9 @@ function aiPlanResult() {
 function aiGuidePage() {
   const messages = state.aiMessages.map(message => `<div class="ai-message ${message.role}"><span>${message.role === "assistant" ? "✦" : "You"}</span><p>${escapeHtml(message.text).replace(/\n/g, "<br>")}</p></div>`).join("");
   const aiStatus = state.aiOnline ? "AI live · conversation memory on" : state.aiError ? "Smart backup active · AI will retry automatically" : "Connecting to AI…";
-  return `${nav("ai-guide")}<main id="main" class="ai-page"><section class="ai-hero"><div class="container"><div><span class="ai-kicker">BEYOND JORDAN INTELLIGENCE</span><h1>Your trip, shaped around <em>you.</em></h1><p>Build a thoughtful Jordan route in seconds, discover the hidden place that matches your travel style, or ask a real travel question.</p><div class="ai-trust"><span>✦ Route-aware</span><span>⌖ Jordan-focused</span><span>◌ Easy to adjust</span></div></div><div class="ai-hero-orbit"><span>AI</span><small>Jordan<br>Concierge</small></div></div></section><section class="section ai-workspace-section"><div class="container ai-workspace"><form class="ai-planner-card" data-form="ai-plan"><div class="ai-card-title"><span class="ai-orb">✦</span><div><span class="eyebrow">AI Trip Maker</span><h2>Tell us your travel style</h2></div></div><div class="form-grid"><div class="field"><label for="ai-days">How many days?</label><select id="ai-days" name="days">${[3,5,7,10,14].map(day => `<option value="${day}" ${day === 7 ? "selected" : ""}>${day} days</option>`).join("")}</select></div><div class="field"><label for="ai-start">Start near</label><select id="ai-start" name="start"><option value="amman">Amman / North</option><option value="aqaba">Aqaba / South</option></select></div><div class="field"><label for="ai-pace">Travel pace</label><select id="ai-pace" name="pace"><option value="relaxed">Relaxed</option><option value="balanced" selected>Balanced</option><option value="adventurous">Adventurous</option></select></div><div class="field"><label for="ai-budget">Travel style</label><select id="ai-budget" name="budget"><option value="budget">Budget-aware</option><option value="comfort" selected>Comfort</option><option value="premium">Premium</option></select></div></div><fieldset class="ai-interests"><legend>What pulls you to Jordan?</legend>${AI_INTERESTS.map((interest, index) => `<label><input type="checkbox" name="interests" value="${interest}" ${index < 2 ? "checked" : ""}><span>${interest}</span></label>`).join("")}</fieldset><button class="btn ai-generate" type="submit" ${state.aiBusy ? "disabled" : ""}>${state.aiBusy ? "<span class='mini-spinner'></span> Shaping your journey…" : "✦ Build my AI journey"}</button><p class="ai-fine-print">No invented prices or live access claims. Always verify time-sensitive details.</p></form><section class="ai-chat-card"><div class="ai-chat-head"><div><span class="status-dot ${state.aiOnline ? "online" : state.aiError ? "limited" : ""}"></span><div><strong>Jordan AI Concierge</strong><small>${aiStatus}</small></div></div><span class="ai-badge">BETA</span></div><div class="ai-quick-prompts">${["Tell me Petra’s story", "Find my hidden gem", "Petra or Wadi Rum?", "Plan a family route"].map(prompt => `<button type="button" data-ai-prompt="${prompt}">${prompt}</button>`).join("")}</div><div class="ai-chat-log" id="ai-chat-log">${messages}${state.aiBusy ? `<div class="ai-message assistant"><span>✦</span><p><i class="typing-dot"></i><i class="typing-dot"></i><i class="typing-dot"></i></p></div>` : ""}</div><form class="ai-chat-input" data-form="ai-chat"><input name="message" maxlength="600" required placeholder="Chat naturally about anything in your Jordan trip…" aria-label="Ask the Jordan AI concierge"><button type="submit" aria-label="Send" ${state.aiBusy ? "disabled" : ""}>↑</button></form></section></div>${aiPlanResult()}</section></main>${footer()}`;
+  const preferences = state.aiPreferences || { days: 7, start: "amman", pace: "balanced", budget: "comfort", interests: ["History", "Nature"] };
+  const option = (value, label, selected) => `<option value="${value}" ${value === selected ? "selected" : ""}>${label}</option>`;
+  return `${nav("ai-guide")}<main id="main" class="ai-page"><section class="ai-hero"><div class="container"><div><span class="ai-kicker">BEYOND JORDAN INTELLIGENCE</span><h1>Your trip, shaped around <em>you.</em></h1><p>Build a thoughtful Jordan route in seconds, discover the hidden place that matches your travel style, or ask a real travel question.</p><div class="ai-trust"><span>✦ Route-aware</span><span>⌖ Jordan-focused</span><span>◌ Easy to adjust</span></div></div><div class="ai-hero-orbit"><span>AI</span><small>Jordan<br>Concierge</small></div></div></section><section class="section ai-workspace-section"><div class="container ai-workspace"><form class="ai-planner-card" data-form="ai-plan"><div class="ai-card-title"><span class="ai-orb">✦</span><div><span class="eyebrow">AI Trip Maker</span><h2>Tell us your travel style</h2></div></div><div class="form-grid"><div class="field"><label for="ai-days">How many days?</label><select id="ai-days" name="days">${tripDurationOptions(preferences.days)}</select></div><div class="field"><label for="ai-start">Start near</label><select id="ai-start" name="start">${option("amman", "Amman / North", preferences.start)}${option("aqaba", "Aqaba / South", preferences.start)}</select></div><div class="field"><label for="ai-pace">Travel pace</label><select id="ai-pace" name="pace">${option("relaxed", "Relaxed", preferences.pace)}${option("balanced", "Balanced", preferences.pace)}${option("adventurous", "Adventurous", preferences.pace)}</select></div><div class="field"><label for="ai-budget">Travel style</label><select id="ai-budget" name="budget">${option("budget", "Budget-aware", preferences.budget)}${option("comfort", "Comfort", preferences.budget)}${option("premium", "Premium", preferences.budget)}</select></div></div><fieldset class="ai-interests"><legend>What pulls you to Jordan?</legend>${AI_INTERESTS.map(interest => `<label><input type="checkbox" name="interests" value="${interest}" ${preferences.interests.includes(interest) ? "checked" : ""}><span>${interest}</span></label>`).join("")}</fieldset><button class="btn ai-generate" type="submit" ${state.aiBusy ? "disabled" : ""}>${state.aiBusy ? "<span class='mini-spinner'></span> Shaping your journey…" : "✦ Build my AI journey"}</button><p class="ai-fine-print">No invented prices or live access claims. Always verify time-sensitive details.</p></form><section class="ai-chat-card"><div class="ai-chat-head"><div><span class="status-dot ${state.aiOnline ? "online" : state.aiError ? "limited" : ""}"></span><div><strong>Jordan AI Concierge</strong><small>${aiStatus}</small></div></div><span class="ai-badge">BETA</span></div><div class="ai-quick-prompts">${["Tell me Petra’s story", "Find my hidden gem", "Petra or Wadi Rum?", "Plan a family route"].map(prompt => `<button type="button" data-ai-prompt="${prompt}">${prompt}</button>`).join("")}</div><div class="ai-chat-log" id="ai-chat-log">${messages}${state.aiBusy ? `<div class="ai-message assistant"><span>✦</span><p><i class="typing-dot"></i><i class="typing-dot"></i><i class="typing-dot"></i></p></div>` : ""}</div><form class="ai-chat-input" data-form="ai-chat"><input name="message" maxlength="600" required placeholder="Chat naturally about anything in your Jordan trip…" aria-label="Ask the Jordan AI concierge"><button type="submit" aria-label="Send" ${state.aiBusy ? "disabled" : ""}>↑</button></form></section></div>${aiPlanResult()}</section></main>${footer()}`;
 }
 
 function plannerSidebar(active = 1) {
@@ -995,7 +1004,7 @@ function tripPlannerPage() {
     ${pageHero("Shape Your Journey", "Trip Planner", "Choose your pace and interests, then adjust a simple day-by-day route.", IMG.wadiRum)}
     <section class="section"><div class="container planner-shell">${plannerSidebar(3)}<div class="planner-main">
       <span class="eyebrow">Your preferences</span><h2 style="font-size:2.2rem">Plan your Jordan adventure</h2>
-      <div class="form-grid"><div class="field"><label for="trip-name">Trip name</label><input id="trip-name" value="${escapeHtml(state.trip.name)}"></div><div class="field"><label for="trip-days">Trip duration</label><select id="trip-days">${[3,5,7,10,14].map(d => `<option value="${d}" ${state.trip.days === d ? "selected" : ""}>${d} days</option>`).join("")}</select></div></div>
+      <div class="form-grid"><div class="field"><label for="trip-name">Trip name</label><input id="trip-name" value="${escapeHtml(state.trip.name)}"></div><div class="field"><label for="trip-days">Trip duration</label><select id="trip-days">${tripDurationOptions(state.trip.days)}</select></div></div>
       <h3 style="margin-top:32px">What interests you?</h3><p class="planner-helper">Your choices now shape the recommendations below and describe the style of your saved journey.</p>
       <div class="interest-grid">${["History", "Nature", "Adventure", "Culture", "Water", "Wellness"].map(x => `<button class="interest ${interests.includes(x) ? "selected" : ""}" data-interest="${x}"><strong>${x}</strong><br><small>${({History:"Ancient cities & stories",Nature:"Trails & reserves",Adventure:"Desert & canyon",Culture:"Food & local life",Water:"Sea & springs",Wellness:"Slow, restorative days"})[x]}</small></button>`).join("")}</div>
       ${suggestedPlaces.length ? `<section class="planner-suggestions"><div class="planner-subhead"><div><span class="eyebrow">Matched to your interests</span><h3>Recommended for you</h3></div><p>Suggestions based on ${escapeHtml(interestNames)}.</p></div><div class="trip-suggestion-grid">${suggestedPlaces.map(tripSuggestionCard).join("")}</div></section>` : ""}
@@ -1068,7 +1077,9 @@ function render(options = {}) {
   else html = (pages[page] || notFoundPage)();
   app.innerHTML = html;
   document.title = `${page === "home" ? "Beyond Jordan" : page.replaceAll("-", " ").replace(/\b\w/g, c => c.toUpperCase())} — Beyond Jordan`;
-  window.scrollTo({ top: options.preserveScroll ? previousScrollY : 0, behavior: "instant" });
+  const targetScrollY = options.preserveScroll ? previousScrollY : 0;
+  window.scrollTo({ top: targetScrollY, behavior: "instant" });
+  if (options.preserveScroll) requestAnimationFrame(() => window.scrollTo({ top: targetScrollY, behavior: "instant" }));
   if (options.chatToBottom) requestAnimationFrame(() => {
     const log = document.querySelector("#ai-chat-log");
     if (log) log.scrollTop = log.scrollHeight;
@@ -1104,7 +1115,7 @@ async function toggleFavorite(id) {
 function openAddTripModal(id) {
   if (!requireAuth(`trip:${id}`)) return;
   const item = findDestination(id);
-  modalRoot.innerHTML = `<div class="modal-backdrop" data-action="close-modal"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" data-modal><div class="modal-head"><h2 id="modal-title">Add to Trip</h2><button class="icon-btn" data-action="close-modal" aria-label="Close">×</button></div><div class="modal-body"><span class="eyebrow">Choose a trip</span><label class="radio-card"><span>${escapeHtml(state.trip.name)}</span><input type="radio" checked name="trip-choice" value="existing"></label><label class="radio-card"><span>Create New Trip</span><input type="radio" name="trip-choice" value="new"></label><div class="new-trip-fields" data-new-trip-fields hidden><div class="field"><label for="new-trip-name">Trip name</label><input id="new-trip-name" value="My Jordan Adventure"></div><div class="field"><label for="new-trip-days">Trip duration</label><select id="new-trip-days">${[3,5,7,10,14].map(day => `<option value="${day}" ${day === 7 ? "selected" : ""}>${day} days</option>`).join("")}</select></div></div><h3 class="modal-section-title">Which day?</h3><div class="day-picker" data-day-picker>${dayChoiceButtons(state.trip.days)}</div><div class="field"><label for="trip-note">Notes</label><textarea id="trip-note" placeholder="Add a note about this stop..."></textarea></div></div><div class="modal-foot"><button class="btn ghost" data-action="close-modal">Cancel</button><button class="btn primary" data-confirm-trip="${item.id}">Add to Trip</button></div></section></div>`;
+  modalRoot.innerHTML = `<div class="modal-backdrop" data-action="close-modal"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" data-modal><div class="modal-head"><h2 id="modal-title">Add to Trip</h2><button class="icon-btn" data-action="close-modal" aria-label="Close">×</button></div><div class="modal-body"><span class="eyebrow">Choose a trip</span><label class="radio-card"><span>${escapeHtml(state.trip.name)}</span><input type="radio" checked name="trip-choice" value="existing"></label><label class="radio-card"><span>Create New Trip</span><input type="radio" name="trip-choice" value="new"></label><div class="new-trip-fields" data-new-trip-fields hidden><div class="field"><label for="new-trip-name">Trip name</label><input id="new-trip-name" value="My Jordan Adventure"></div><div class="field"><label for="new-trip-days">Trip duration</label><select id="new-trip-days">${tripDurationOptions(7)}</select></div></div><h3 class="modal-section-title">Which day?</h3><div class="day-picker" data-day-picker>${dayChoiceButtons(state.trip.days)}</div><div class="field"><label for="trip-note">Notes</label><textarea id="trip-note" placeholder="Add a note about this stop..."></textarea></div></div><div class="modal-foot"><button class="btn ghost" data-action="close-modal">Cancel</button><button class="btn primary" data-confirm-trip="${item.id}">Add to Trip</button></div></section></div>`;
   document.body.classList.add("modal-open");
 }
 
