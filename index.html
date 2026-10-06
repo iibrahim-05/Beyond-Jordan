@@ -11,23 +11,36 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@^6.11.2/dist/maplibre-gl.css" />
-    <link rel="stylesheet" href="styles.css?v=20261006-trip-basics" />
+    <link rel="stylesheet" href="styles.css?v=20261006-language-panel" />
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
     <aside id="language-panel" class="language-panel notranslate" hidden translate="no" aria-labelledby="language-panel-title">
+      <span class="language-panel-glow" aria-hidden="true"></span>
       <div class="language-panel-head">
-        <div><span aria-hidden="true">🌐</span><strong id="language-panel-title">Choose language</strong></div>
+        <div class="language-panel-title-wrap">
+          <span class="language-panel-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9S14.5 18.4 12 21c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3Z"></path></svg>
+          </span>
+          <span><small>Explore without borders</small><strong id="language-panel-title">Choose your language</strong></span>
+        </div>
         <button id="close-language-panel" class="language-close" type="button" aria-label="Close language menu">×</button>
       </div>
-      <p>Translate the complete website into your preferred language.</p>
-      <label class="language-label" for="site-language">Website language</label>
-      <select id="site-language" class="site-language" aria-label="Website language">
-        <option value="en">English</option>
-        <option value="" disabled>Loading more languages…</option>
-      </select>
+      <p class="language-intro">See every destination, activity, and travel plan in the language that feels natural to you.</p>
+      <div class="language-select-card">
+        <label class="language-label" for="site-language">Website language</label>
+        <div class="language-select-wrap">
+          <span class="language-letters" aria-hidden="true">A<span>文</span></span>
+          <select id="site-language" class="site-language" aria-label="Website language">
+            <option value="en">English</option>
+            <option value="" disabled>Loading more languages…</option>
+          </select>
+          <span class="language-chevron" aria-hidden="true">⌄</span>
+        </div>
+      </div>
+      <div class="language-panel-note"><span aria-hidden="true">✓</span><span>English is always available as the original language.</span></div>
       <div id="google_translate_element" class="translation-engine" aria-hidden="true"></div>
-      <small>Translation powered by <a href="https://translate.google.com/" target="_blank" rel="noopener">Google Translate</a>.</small>
+      <small class="language-powered">Powered by <a href="https://translate.google.com/" target="_blank" rel="noopener">Google Translate</a></small>
     </aside>
     <div id="app"></div>
     <div id="modal-root"></div>
@@ -39,6 +52,6 @@
       };
     </script>
     <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" defer></script>
-    <script type="module" src="app.js?v=20261006-trip-basics"></script>
+    <script type="module" src="app.js?v=20261006-language-panel"></script>
   </body>
 </html>

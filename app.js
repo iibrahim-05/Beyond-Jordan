@@ -326,7 +326,7 @@ function nav(active = "") {
       <a class="brand" href="#/home" aria-label="Beyond Jordan home"><span class="brand-mark">B</span><span>BEYOND JORDAN</span></a>
       <div class="nav-links" id="nav-links">${links.map(([href, label]) => `<a class="nav-link ${href === "ai-guide" ? "ai-nav" : ""} ${active === href ? "active" : ""}" href="#/${href}">${label}</a>`).join("")}</div>
       <div class="nav-actions">
-        <button class="language-btn notranslate" type="button" data-action="language" translate="no" aria-label="Choose website language" aria-expanded="false" aria-controls="language-panel"><span aria-hidden="true">🌐</span><span class="language-btn-label">Language</span></button>
+        <button class="language-btn notranslate" type="button" data-action="language" translate="no" aria-label="Choose website language" aria-expanded="false" aria-controls="language-panel"><span class="language-btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9S14.5 18.4 12 21c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3Z"></path></svg></span><span class="language-btn-label">Language</span><span class="language-btn-caret" aria-hidden="true">⌄</span></button>
         ${state.user ? `<a href="#/favorites" aria-label="Favorites">♡</a><a class="avatar" href="#/profile" aria-label="Profile">${escapeHtml(state.user.name?.[0]?.toUpperCase() || "T")}</a>` : `<a class="login" href="#/login">Log In</a><a class="btn primary signup" href="#/signup">Sign Up</a>`}
         <button class="menu-btn" data-action="menu" aria-label="Open menu" aria-expanded="false">☰</button>
       </div>
